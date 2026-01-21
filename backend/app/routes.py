@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+from .db import movies_collection
 
 bp = Blueprint('api', __name__)
 
@@ -8,17 +9,5 @@ def health():
 
 @bp.route('/api/movies')
 def movies():
-    return jsonify([
-        {
-            "id": 1,
-            "title": "The Avengers",
-            "year": 2012,
-            "rating": 8.0
-        },
-        {
-            "id": 2,
-            "title": "Interstellar",
-            "year": 2014,
-            "rating": 8.6
-        }
-    ])
+    movies = list(movies_collection.find({}, {"_id": 0}))
+    return jsonify(movies)
