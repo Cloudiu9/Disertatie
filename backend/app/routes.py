@@ -22,7 +22,9 @@ def get_movies():
     movies_cursor = (
         movies_collection
         .find({}, {"_id": 0})
-        .sort(sort_field, -1)
+        .sort([(sort_field, -1),   # sort principal
+               ("tmdb_id", 1)      # sort secundar stabil
+        ])
         .skip(skip)
         .limit(limit)
     )

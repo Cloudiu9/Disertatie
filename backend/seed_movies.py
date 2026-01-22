@@ -34,16 +34,26 @@ def normalize_movie(movie):
 
 def seed_movies(pages=5):
     movies_collection.delete_many({})
+    movies_collection.create_index("tmdb_id", unique=True)
 
-    all_movies = []
+    inserted = 0
 
     for page in range(1, pages + 1):
         raw_movies = fetch_movies(page)
         for movie in raw_movies:
-            all_movies.append(normalize_movie(movie))
+            normalized = normalize_movie(movie)
 
-    movies_collection.insert_many(all_movies)
-    print(f"Seed completed: {len(all_movies)} movies inserted")
+            result = movies_collection.update_one(
+                {"tmdb_id": normalized["tmdb_id"]},
+                {"$setOnInsert": normalized},
+                upsert=True
+            )
+
+            if result.upserted_id:
+                inserted += 1
+
+    print(f"Seed completed: {inserted} unique movies inserted")
+
 
 if __name__ == "__main__":
     seed_movies()
