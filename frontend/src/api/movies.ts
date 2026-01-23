@@ -20,3 +20,17 @@ export async function fetchMovies(
 
   return res.json();
 }
+
+export async function searchMovies(query: string): Promise<Movie[]> {
+  if (!query) return [];
+
+  const res = await fetch(
+    `${API_URL}/movies/search?q=${encodeURIComponent(query)}`,
+  );
+
+  if (!res.ok) {
+    throw new Error("Search failed");
+  }
+
+  return res.json();
+}
