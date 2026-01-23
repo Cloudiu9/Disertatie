@@ -63,7 +63,7 @@ def search_movies():
         movies_collection.find(
             {"title": {"$regex": query, "$options": "i"}},
             {"_id": 0}
-        ).limit(10)
+        ).limit(20)
     )
 
-    return jsonify(movies)
+    return jsonify(list(movies))

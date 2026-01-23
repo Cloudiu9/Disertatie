@@ -3,5 +3,10 @@ export type Movie = {
   title: string;
   year: number | null;
   rating: number;
+  votes: number;
   popularity: number;
+  genres: string[];
+  overview?: string;
+  runtime?: number;
+  poster_path?: string;
 };
