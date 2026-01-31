@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+  background-color: black;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

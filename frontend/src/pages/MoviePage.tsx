@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchMovies, searchMovies } from "../api/movies";
 import type { Movie } from "../types/Movie";
 import { Link } from "react-router-dom";
+import MovieRow from "../components/MovieRow";
 
 function MoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -58,44 +59,10 @@ function MoviesPage() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Movies</h1>
-
-      <input
-        placeholder="Search..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value.trimStart())}
-      />
-
-      <select
-        value={sort}
-        onChange={(e) => setSort(e.target.value)}
-        disabled={!!searchQuery}
-      >
-        <option value="rating">Rating</option>
-        <option value="popularity">Popularity</option>
-        <option value="year">Year</option>
-      </select>
-
-      <ul>
-        {displayedMovies.map((movie) => (
-          <li key={movie.tmdb_id}>
-            <Link to={`/movies/${movie.tmdb_id}`}>
-              {highlight(movie.title, searchQuery)} ({movie.year}) ⭐{" "}
-              {movie.rating}
-            </Link>
-          </li>
-        ))}
-      </ul>
-
-      {!searchQuery && (
-        <>
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))}>
-            Prev
-          </button>
-          <button onClick={() => setPage((p) => p + 1)}>Next</button>
-        </>
-      )}
+    <div className="space-y-12 pb-12">
+      <MovieRow title="Popular Now" sort="popularity" />
+      <MovieRow title="Top Rated" sort="rating" />
+      <MovieRow title="Newest Releases" sort="year" />
     </div>
   );
 }
