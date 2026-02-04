@@ -3,6 +3,7 @@ import { fetchMovies, searchMovies } from "../api/movies";
 import type { Movie } from "../types/Movie";
 import { Link } from "react-router-dom";
 import MovieRow from "../components/MovieRow";
+import Hero from "../components/HeroBanner";
 
 function MoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -60,6 +61,8 @@ function MoviesPage() {
 
   return (
     <div className="space-y-12 pb-12">
+      <Hero />
+
       <MovieRow title="Popular Now" sort="popularity" />
       <MovieRow title="Top Rated" sort="rating" />
       <MovieRow title="Newest Releases" sort="year" />
