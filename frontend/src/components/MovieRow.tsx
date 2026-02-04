@@ -6,18 +6,28 @@ import { useDragScroll } from "../hooks/useDragScroll";
 
 type Props = {
   title: string;
-  sort: string;
+  sort: "rating" | "popularity" | "year";
 };
 
 function MovieRow({ title, sort }: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
   const drag = useDragScroll();
 
   useEffect(() => {
+    setLoading(true);
+
     fetchMovies(1, 20, sort).then((data) => {
       setMovies(data.results);
+      setLoading(false);
     });
   }, [sort]);
+
+  function MovieSkeleton() {
+    return (
+      <div className="h-[225px] w-[150px] rounded bg-gray-800 animate-pulse" />
+    );
+  }
 
   return (
     <section className="space-y-4">
@@ -33,9 +43,15 @@ function MovieRow({ title, sort }: Props) {
           cursor-grab active:cursor-grabbing
         "
       >
-        {movies.map((movie) => (
-          <MovieCard key={movie.tmdb_id} movie={movie} didDrag={drag.didDrag} />
-        ))}
+        {loading
+          ? Array.from({ length: 10 }).map((_, i) => <MovieSkeleton key={i} />)
+          : movies.map((movie) => (
+              <MovieCard
+                key={movie.tmdb_id}
+                movie={movie}
+                didDrag={drag.didDrag}
+              />
+            ))}
       </div>
     </section>
   );
