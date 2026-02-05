@@ -6,4 +6,7 @@ def create_app():
     CORS(app)
     from . import routes
     app.register_blueprint(routes.bp)
+    
+    from routes.recommendations import bp as recommendations_bp
+    app.register_blueprint(recommendations_bp)
     return app

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import type { Movie } from "../types/Movie";
+import MovieRow from "../components/MovieRow";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -8,6 +9,15 @@ function MovieDetailsPage() {
   const { id } = useParams();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recommendations, setRecommendations] = useState<Movie[]>([]);
+
+  useEffect(() => {
+    if (!movie) return;
+
+    fetch(`http://localhost:5000/api/recommendations/movie/${movie.tmdb_id}`)
+      .then((res) => res.json())
+      .then(setRecommendations);
+  }, [movie]);
 
   useEffect(() => {
     setLoading(true);
@@ -105,6 +115,16 @@ function MovieDetailsPage() {
           </div>
         </div>
       </div>
+
+      {recommendations.length > 0 && (
+        <div className="mx-auto max-w-screen-2xl px-6 py-8">
+          <MovieRow
+            title="Recommended for you"
+            movies={recommendations.filter((m) => m.tmdb_id !== movie.tmdb_id)}
+            disableFetch
+          />
+        </div>
+      )}
 
       {/* Back navigation */}
       <div className="mx-auto max-w-screen-2xl px-6 py-8">

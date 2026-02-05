@@ -59,7 +59,7 @@ def normalize_movie(movie, details):
         "poster_path": details.get("poster_path"),
     }
 
-def seed_movies(pages=10):
+def seed_movies(pages=50):
     movies_collection.delete_many({})
     movies_collection.create_index("tmdb_id", unique=True)
 

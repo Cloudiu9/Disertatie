@@ -23,6 +23,9 @@ export default function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
 
   /* ---------------- outside click handling ---------------- */
+  // useEffect(() => {})          // Runs after every re-render         causes a 'side effect'
+  // useEffect(() => {}, [])      // Runs only on mount (add a component to the DOM)
+  // useEffect(() => {}, [value]) // Runs on mount + when value changes
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {

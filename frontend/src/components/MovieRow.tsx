@@ -6,22 +6,32 @@ import { useDragScroll } from "../hooks/useDragScroll";
 
 type Props = {
   title: string;
-  sort: "rating" | "popularity" | "year";
+  sort?: string;
+  movies?: Movie[];
+  disableFetch?: boolean;
 };
 
-function MovieRow({ title, sort }: Props) {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(true);
+function MovieRow({
+  title,
+  sort,
+  movies: injectedMovies,
+  disableFetch,
+}: Props) {
+  const [movies, setMovies] = useState<Movie[]>(injectedMovies ?? []);
+  const [loading, setLoading] = useState(!injectedMovies);
+
   const drag = useDragScroll();
 
   useEffect(() => {
+    if (disableFetch) return;
+
     setLoading(true);
 
     fetchMovies(1, 20, sort).then((data) => {
       setMovies(data.results);
       setLoading(false);
     });
-  }, [sort]);
+  }, [sort, disableFetch]);
 
   function MovieSkeleton() {
     return (
