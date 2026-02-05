@@ -1,10 +1,8 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  BellIcon,
-  MagnifyingGlassIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/24/outline";
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { BellIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import debounce from "lodash.debounce";
+import type { Movie } from "../types/Movie";
 
 const navItems = [
   { label: "Browse", href: "/" },
@@ -14,26 +12,77 @@ const navItems = [
   { label: "My List", href: "/my-list" },
 ];
 
-function Header() {
+export default function Header() {
+  const navigate = useNavigate();
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Movie[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
+
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  /* ---------------- outside click handling ---------------- */
+  // useEffect(() => {})          // Runs after every re-render         causes a 'side effect'
+  // useEffect(() => {}, [])      // Runs only on mount (add a component to the DOM)
+  // useEffect(() => {}, [value]) // Runs on mount + when value changes
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, []);
+
+  /* ---------------- debounced backend search ---------------- */
+  const doSearch = debounce(async (q: string) => {
+    if (!q) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:5000/api/movies/search?q=${encodeURIComponent(q)}`,
+      );
+      const data: Movie[] = await res.json();
+      setSearchResults(data);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, 300);
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    doSearch(q.trim());
+  };
+
+  const onResultClick = (movie: Movie) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    navigate(`/movies/${movie.tmdb_id}`);
+  };
 
   return (
-    <header className="fixed top-0 z-50 w-full bg-gradient-to-b from-black/90 to-black/40 backdrop-blur">
+    <header className="fixed top-0 z-50 w-full bg-[#141414] shadow-md">
       <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-6">
         {/* LEFT */}
-        <div className="flex items-center gap-8">
-          {/* Logo */}
-          <Link
-            to="/"
-            className="text-xl font-extrabold tracking-wide text-red-600"
-          >
+        <div className="flex items-center gap-10">
+          <Link to="/" className="text-2xl font-black text-red-600">
             MOVIEFLIX
           </Link>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-200">
+          <nav className="hidden md:flex gap-6 text-sm text-gray-300">
             {navItems.map((item) => (
               <Link
                 key={item.label}
@@ -47,77 +96,84 @@ function Header() {
         </div>
 
         {/* RIGHT */}
-        <div className="flex items-center gap-5 text-gray-200">
-          {/* Search */}
-          <div className="relative flex items-center">
-            {searchOpen && (
-              <input
-                autoFocus
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Titles, people, genres"
-                className="mr-2 w-48 rounded bg-black/80 px-3 py-1 text-sm text-white placeholder-gray-400 outline-none ring-1 ring-gray-600 focus:ring-white transition"
-              />
-            )}
-
-            <button
-              onClick={() => setSearchOpen((v) => !v)}
-              className="hover:text-white transition"
+        <div className="flex items-center gap-6 text-gray-300">
+          {/* SEARCH */}
+          <div ref={searchRef} className="relative">
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
             >
-              <MagnifyingGlassIcon className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Notifications */}
-          {/* <button className="relative hover:text-white transition">
-            <BellIcon className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-600" />
-          </button> */}
-
-          {/* Profile */}
-          <div className="relative">
-            <button
-              onClick={() => setProfileOpen((v) => !v)}
-              className="flex items-center gap-1"
-            >
-              <img
-                src="https://i.pravatar.cc/40?img=32"
-                alt="Profile"
-                className="h-8 w-8 rounded"
+              <MagnifyingGlassIcon
+                className="h-5 w-5 cursor-pointer hover:text-white"
+                onClick={() => setSearchOpen(true)}
               />
-              <ChevronDownIcon className="h-4 w-4" />
-            </button>
 
-            {profileOpen && (
-              <div
-                className="absolute right-0 mt-2 w-48 rounded bg-black/95 py-2 text-sm shadow-lg ring-1 ring-white/10"
-                onMouseLeave={() => setProfileOpen(false)}
-              >
-                <Link
-                  to="/profile"
-                  className="block px-4 py-2 hover:bg-white/10"
-                >
-                  Profile
-                </Link>
-                <Link
-                  to="/settings"
-                  className="block px-4 py-2 hover:bg-white/10"
-                >
-                  Settings
-                </Link>
-                <button
-                  onClick={() => alert("Logged out")}
-                  className="block w-full px-4 py-2 text-left hover:bg-white/10"
-                >
-                  Log out
-                </button>
+              {searchOpen && (
+                <input
+                  autoFocus
+                  value={searchQuery}
+                  onChange={onChange}
+                  placeholder="Search movies..."
+                  className="w-48 rounded bg-black px-3 py-1 text-sm text-white placeholder-gray-400 outline-none"
+                />
+              )}
+            </div>
+
+            {searchOpen && searchQuery && (
+              <div className="absolute right-0 top-10 z-50 w-80 max-h-96 overflow-y-auto rounded bg-black shadow-lg ring-1 ring-white/10">
+                {searchLoading && (
+                  <div className="p-4 text-gray-400">Searching...</div>
+                )}
+
+                {!searchLoading &&
+                  searchResults.length === 0 &&
+                  searchQuery && (
+                    <div className="p-4 text-gray-500">
+                      No results for "{searchQuery}"
+                    </div>
+                  )}
+
+                {!searchLoading &&
+                  searchResults.map((movie) => (
+                    <div
+                      key={movie.tmdb_id}
+                      onClick={() => onResultClick(movie)}
+                      className="flex cursor-pointer items-center gap-3 border-b border-gray-800 p-3 hover:bg-gray-800"
+                    >
+                      <img
+                        src={
+                          movie.poster_path
+                            ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
+                            : "https://via.placeholder.com/80x120?text=No+Image"
+                        }
+                        alt={movie.title}
+                        className="h-16 w-12 rounded object-cover"
+                      />
+                      <div>
+                        <div className="text-sm font-semibold text-white">
+                          {movie.title}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {movie.year ?? ""}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
               </div>
             )}
           </div>
+
+          <BellIcon className="h-5 w-5 hover:text-white transition" />
+
+          <Link to="/profile">
+            <img
+              src="https://i.pravatar.cc/40?img=32"
+              alt="Profile"
+              className="h-8 w-8 rounded"
+            />
+          </Link>
         </div>
       </div>
     </header>
   );
 }
-
-export default Header;

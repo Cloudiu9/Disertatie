@@ -8,12 +8,10 @@ function App() {
     <BrowserRouter>
       <Header />
 
-      <main className="pt-16">
-        <Routes>
-          <Route path="/" element={<MoviesPage />} />
-          <Route path="/movies/:id" element={<MovieDetailsPage />} />
-        </Routes>
-      </main>
+      <Routes>
+        <Route path="/" element={<MoviesPage />} />
+        <Route path="/movies/:id" element={<MovieDetailsPage />} />
+      </Routes>
     </BrowserRouter>
   );
 }
