@@ -12,12 +12,18 @@ function MovieDetailsPage() {
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
 
   useEffect(() => {
-    if (!movie) return;
+    if (!id) return;
 
-    fetch(`http://localhost:5000/api/recommendations/movie/${movie.tmdb_id}`)
-      .then((res) => res.json())
-      .then(setRecommendations);
-  }, [movie]);
+    setRecommendations([]); // hard reset to prevent stale UI
+
+    fetch(`http://127.0.0.1:5000/api/recommendations/movie/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Recommendations fetch failed");
+        return res.json();
+      })
+      .then(setRecommendations)
+      .catch(() => setRecommendations([]));
+  }, [id]);
 
   useEffect(() => {
     setLoading(true);
