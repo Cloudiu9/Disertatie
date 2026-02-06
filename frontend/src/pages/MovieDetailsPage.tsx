@@ -67,6 +67,9 @@ function MovieDetailsPage() {
         className="relative h-[90vh] w-full bg-cover bg-center bg-[center_30%]"
         style={{
           backgroundImage: backdropUrl ? `url(${backdropUrl})` : undefined,
+          // make it less zoomed, potential fix?
+          // backgroundSize: "80%",
+          // backgroundRepeat: "no-repeat",
         }}
       >
         {/* Gradient overlay */}

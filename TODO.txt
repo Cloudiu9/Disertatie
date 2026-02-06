@@ -1,6 +1,44 @@
 - Exclude unwanted movies (probably can't be done? unless manually)
-- Make movie cards bigger for a better UX
+
+LIST TO EXCLUDE:
+Shameless,
+Kandungan,
+Risqué,
+Succubus,
+Disclosure,
+The Voyeur,
+Ligaw,
+Uhaw,
+Scorned,
+Rita,
+Sayaw,
+Malena,
+Giacomo Casanova,
+Kulong,
+Mom's Friend,
+My Friend's Mom,
+EKS,
+Fate/kaleid liner Prisma☆Illya: Dance at the Sports Festival!,
+Fate/kaleid liner Prisma☆Illya 2wei!: Magical Girl in Hot Springs Inn,
+Les Inshortables, Vol. 1,
+Play Time,
+High Art,
+Emmanuelle
+
 - Make a real README.md with all the steps of functionality (ex: make env files in backend/frontend, run seed_movies.py, build_content_recommender, etc.)/project description
+    Setup:
+    - Install the dependencies: "requirements.txt from backend / package.json from frontend
+    - Make a .env file in the backend directory with your MONGO_URI and TMDB_KEY
+    - Make a .env.local with a VITE_API_BASE=http://localhost:5000
+    - Run "python seed_movies.py" from backend
+    - Run "python scripts\build_content_recommender.py " from backend (run this every time you rebuild the database with seed_movies.py)
+    - To boot up the project, run 'flask run' from backend and 'npm run dev' from frontend
+
+    Features:
+    - Search
+    - Three different movie sections: Popular, Top, New
+    - Recommendations
 
 --- 1. Fix Top Rated (add a cutoff point for the votes ex: min 2000)
-2. Improve recommendations (collaborative filtering => account => what user clicks on / likes)
+2. Make recommendation row start earlier and end later, in order to fit all movies without scrolling
+TODO 3. Improve recommendations (collaborative filtering => account => what user clicks on / likes)
