@@ -75,7 +75,7 @@ tfidf_matrix = vectorizer.fit_transform(documents)
 # ------------------------
 # SAVE ARTIFACTS
 # ------------------------
-ARTIFACTS_PATH = "backend/artifacts"
+ARTIFACTS_PATH = "./artifacts"
 
 joblib.dump(vectorizer, f"{ARTIFACTS_PATH}/tfidf_vectorizer.joblib")
 joblib.dump(tfidf_matrix, f"{ARTIFACTS_PATH}/tfidf_matrix.joblib")

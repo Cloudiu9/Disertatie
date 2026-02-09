@@ -29,13 +29,13 @@ function MovieCard({ movie, didDrag }: Props) {
     <div
       onClick={handleClick}
       draggable={false}
-      className="min-w-[160px] cursor-pointer select-none"
+      className="min-w-[185px] cursor-pointer select-none"
     >
       <img
         src={posterUrl}
         alt={movie.title}
         draggable={false}
-        className="h-[240px] w-[160px] rounded-md object-cover transition-transform duration-300 hover:scale-105"
+        className="h-[300px] w-[300px] rounded-md object-cover transition-transform duration-300 hover:scale-105"
       />
     </div>
   );

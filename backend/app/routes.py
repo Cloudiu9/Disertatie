@@ -19,18 +19,25 @@ def get_movies():
 
     sort_field = SORT_FIELDS.get(sort_param, "rating")
 
+    # Apply vote cutoff only for top-rated movies
+    filter_query = {}
+    if sort_field == "rating":
+        filter_query = {"votes": {"$gt": 2000}}
+
     movies_cursor = (
         movies_collection
-        .find({}, {"_id": 0})
-        .sort([(sort_field, -1),   # sort principal
-               ("tmdb_id", 1)      # sort secundar stabil
+        .find(filter_query, {"_id": 0})
+        .sort([(sort_field, -1),
+            ("tmdb_id", 1)
         ])
         .skip(skip)
         .limit(limit)
     )
 
+
     movies = list(movies_cursor)
-    total = movies_collection.count_documents({})
+    total = movies_collection.count_documents(filter_query)
+
 
     return jsonify({
         "page": page,
