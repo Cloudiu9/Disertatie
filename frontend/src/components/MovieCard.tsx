@@ -17,7 +17,6 @@ function MovieCard({ movie, didDrag }: Props) {
       e.stopPropagation();
       return;
     }
-
     navigate(`/movies/${movie.tmdb_id}`);
   };
 
@@ -29,13 +28,13 @@ function MovieCard({ movie, didDrag }: Props) {
     <div
       onClick={handleClick}
       draggable={false}
-      className="min-w-[185px] cursor-pointer select-none"
+      className="min-w-[230px] cursor-pointer select-none"
     >
       <img
         src={posterUrl}
         alt={movie.title}
         draggable={false}
-        className="h-[300px] w-[300px] rounded-md object-cover transition-transform duration-300 hover:scale-105"
+        className="min-h-[315px] min-w-[230px] h-[315px] w-[230px] rounded-md object-cover transition-transform duration-300 hover:scale-105"
       />
     </div>
   );

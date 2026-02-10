@@ -9,4 +9,7 @@ export type Movie = {
   overview?: string;
   runtime?: number;
   poster_path?: string;
+  backdrop_path?: string;
+  original_language?: string;
+  tagline?: string;
 };

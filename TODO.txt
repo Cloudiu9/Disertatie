@@ -31,7 +31,7 @@ Emmanuelle
     - Make a .env file in the backend directory with your MONGO_URI and TMDB_KEY
     - Make a .env.local with a VITE_API_BASE=http://localhost:5000
     - Run "python seed_movies.py" from backend
-    - Run "python scripts\build_content_recommender.py " from backend (run this every time you rebuild the database with seed_movies.py)
+    - Run "python scripts\build_content_recommender.py" from backend (run this every time you rebuild the database with seed_movies.py)
     - To boot up the project, run 'flask run' from backend and 'npm run dev' from frontend
 
     Features:
@@ -39,8 +39,10 @@ Emmanuelle
     - Three different movie sections: Popular, Top, New
     - Recommendations
 
---- 1. Fix Top Rated (add a cutoff point for the votes ex: min 2000)
+-DONE- 1. Fix Top Rated (add a cutoff point for the votes ex: min 2000)
 TODO 2. Make recommendation row start earlier and end later, in order to fit all movies without scrolling
 TODO 3. Improve recommendations (collaborative filtering => account => what user clicks on / likes)
 
 WORKING ON: AUTHENTICATION
+TODO - Add confirmation on successful register/login
+TODO - Add logout functionality

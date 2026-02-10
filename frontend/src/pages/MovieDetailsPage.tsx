@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import type { Movie } from "../types/Movie";
 import MovieRow from "../components/MovieRow";
+import { addToMyList, removeFromMyList } from "../api/myList";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -10,7 +11,9 @@ function MovieDetailsPage() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
+  const [inMyList, setInMyList] = useState(false);
 
+  // Recommendations
   useEffect(() => {
     if (!id) return;
 
@@ -25,6 +28,7 @@ function MovieDetailsPage() {
       .catch(() => setRecommendations([]));
   }, [id]);
 
+  // Displaying movies
   useEffect(() => {
     setLoading(true);
 
@@ -35,6 +39,25 @@ function MovieDetailsPage() {
         setLoading(false);
       });
   }, [id]);
+
+  // My List
+  useEffect(() => {
+    if (!movie) return;
+
+    fetch("http://127.0.0.1:5000/api/my-list", {
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Not authenticated");
+        return res.json();
+      })
+      .then((list: Movie[]) => {
+        setInMyList(list.some((m) => m.tmdb_id === movie.tmdb_id));
+      })
+      .catch(() => {
+        setInMyList(false);
+      });
+  }, [movie]);
 
   if (loading) {
     return (
@@ -56,8 +79,9 @@ function MovieDetailsPage() {
     ? `${IMAGE_BASE}/w500${movie.poster_path}`
     : "/placeholder-poster.png";
 
-  const backdropUrl = movie.poster_path
-    ? `${IMAGE_BASE}/original${movie.poster_path}`
+  // TODO Add movie.backdrop_path via the backend
+  const backdropUrl = movie.backdrop_path
+    ? `${IMAGE_BASE}/original${movie.backdrop_path}`
     : undefined;
 
   return (
@@ -116,8 +140,21 @@ function MovieDetailsPage() {
                 <button className="rounded bg-white px-6 py-2 text-sm font-semibold text-black hover:bg-gray-200 transition">
                   Play
                 </button>
-                <button className="rounded bg-white/20 px-6 py-2 text-sm font-semibold hover:bg-white/30 transition">
-                  + My List
+                <button
+                  onClick={async () => {
+                    if (!movie) return;
+
+                    if (inMyList) {
+                      await removeFromMyList(movie.tmdb_id);
+                      setInMyList(false);
+                    } else {
+                      await addToMyList(movie.tmdb_id);
+                      setInMyList(true);
+                    }
+                  }}
+                  className="rounded bg-white/20 px-6 py-2 text-sm font-semibold hover:bg-white/30 transition"
+                >
+                  {inMyList ? "✓ In My List" : "+ My List"}
                 </button>
               </div>
             </div>

@@ -87,7 +87,9 @@ export default function Header() {
               <Link
                 key={item.label}
                 to={item.href}
-                className="transition hover:text-white"
+                className={`transition hover:text-white ${
+                  item.label === "My List" ? "hover:underline" : ""
+                }`}
               >
                 {item.label}
               </Link>
