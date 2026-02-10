@@ -40,5 +40,7 @@ Emmanuelle
     - Recommendations
 
 --- 1. Fix Top Rated (add a cutoff point for the votes ex: min 2000)
-2. Make recommendation row start earlier and end later, in order to fit all movies without scrolling
+TODO 2. Make recommendation row start earlier and end later, in order to fit all movies without scrolling
 TODO 3. Improve recommendations (collaborative filtering => account => what user clicks on / likes)
+
+WORKING ON: AUTHENTICATION

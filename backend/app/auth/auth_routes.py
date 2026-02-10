@@ -109,7 +109,7 @@ def login():
         token,
         httponly=True,
         samesite="Lax",
-        secure=False,  # set True in production (HTTPS)
+        secure=False,  # IMP set True in production (HTTPS)
         max_age=JWT_EXPIRES_DAYS * 24 * 60 * 60,
     )
 

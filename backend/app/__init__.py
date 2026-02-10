@@ -7,6 +7,9 @@ def create_app():
 
     from . import routes
     app.register_blueprint(routes.bp)
+    
+    from .my_list_routes import bp as my_list_bp
+    app.register_blueprint(my_list_bp)
 
     from routes.recommendations import bp as recommendations_bp
     app.register_blueprint(recommendations_bp)
