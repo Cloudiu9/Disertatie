@@ -132,3 +132,18 @@ def me():
 
     user["_id"] = str(user["_id"])
     return jsonify(user)
+
+@bp.route("/logout", methods=["POST"])
+def logout():
+    response = make_response(jsonify({"status": "logged_out"}))
+
+    response.set_cookie(
+        "access_token",
+        "",
+        expires=0,
+        httponly=True,
+        samesite="None",
+        secure=True,
+    )
+
+    return response

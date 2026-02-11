@@ -41,5 +41,12 @@ export async function getMe() {
 }
 
 export async function logout() {
-  // optional for now
+  const res = await fetch("http://127.0.0.1:5000/api/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error("Logout failed");
+  }
 }

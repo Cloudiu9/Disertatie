@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import type { Movie } from "../types/Movie";
 import MovieRow from "../components/MovieRow";
 import { addToMyList, removeFromMyList } from "../api/myList";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -12,6 +14,7 @@ function MovieDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [inMyList, setInMyList] = useState(false);
+  const { user } = useAuth();
 
   // Recommendations
   useEffect(() => {
@@ -144,12 +147,23 @@ function MovieDetailsPage() {
                   onClick={async () => {
                     if (!movie) return;
 
-                    if (inMyList) {
-                      await removeFromMyList(movie.tmdb_id);
-                      setInMyList(false);
-                    } else {
-                      await addToMyList(movie.tmdb_id);
-                      setInMyList(true);
+                    if (!user) {
+                      toast.error("You must be logged in to use My List");
+                      return;
+                    }
+
+                    try {
+                      if (inMyList) {
+                        await removeFromMyList(movie.tmdb_id);
+                        setInMyList(false);
+                        toast.success("Removed from My List");
+                      } else {
+                        await addToMyList(movie.tmdb_id);
+                        setInMyList(true);
+                        toast.success("Added to My List");
+                      }
+                    } catch {
+                      toast.error("Action failed");
                     }
                   }}
                   className="rounded bg-white/20 px-6 py-2 text-sm font-semibold hover:bg-white/30 transition"

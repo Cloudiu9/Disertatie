@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BellIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import debounce from "lodash.debounce";
 import type { Movie } from "../types/Movie";
+import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { label: "Browse", href: "/" },
@@ -21,6 +22,9 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
 
   /* ---------------- outside click handling ---------------- */
   // useEffect(() => {})          // Runs after every re-render         causes a 'side effect'
@@ -165,15 +169,42 @@ export default function Header() {
             )}
           </div>
 
-          <BellIcon className="h-5 w-5 hover:text-white transition" />
+          <div className="relative">
+            {user ? (
+              <>
+                <button
+                  onClick={() => setOpen((o) => !o)}
+                  className="rounded-full bg-white/20 px-4 py-2 text-sm hover:bg-white/30 transition"
+                >
+                  {user.email}
+                </button>
 
-          <Link to="/profile">
-            <img
-              src="https://i.pravatar.cc/40?img=32"
-              alt="Profile"
-              className="h-8 w-8 rounded"
-            />
-          </Link>
+                {open && (
+                  <div className="absolute right-0 mt-2 w-40 rounded bg-zinc-900 border border-zinc-700 shadow-lg">
+                    <button
+                      onClick={async () => {
+                        await logout();
+                        setOpen(false);
+                        navigate("/");
+                      }}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-zinc-800"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex gap-4 text-sm">
+                <Link to="/login" className="hover:text-white">
+                  Login
+                </Link>
+                <Link to="/register" className="hover:text-white">
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
