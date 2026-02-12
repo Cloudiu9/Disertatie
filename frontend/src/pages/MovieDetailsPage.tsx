@@ -47,7 +47,7 @@ function MovieDetailsPage() {
   useEffect(() => {
     if (!movie) return;
 
-    fetch("http://127.0.0.1:5000/api/my-list", {
+    fetch("/api/my-list", {
       credentials: "include",
     })
       .then((res) => {
@@ -82,7 +82,6 @@ function MovieDetailsPage() {
     ? `${IMAGE_BASE}/w500${movie.poster_path}`
     : "/placeholder-poster.png";
 
-  // TODO Add movie.backdrop_path via the backend
   const backdropUrl = movie.backdrop_path
     ? `${IMAGE_BASE}/original${movie.backdrop_path}`
     : undefined;
@@ -94,9 +93,6 @@ function MovieDetailsPage() {
         className="relative h-[90vh] w-full bg-cover bg-center bg-[center_30%]"
         style={{
           backgroundImage: backdropUrl ? `url(${backdropUrl})` : undefined,
-          // make it less zoomed, potential fix?
-          // backgroundSize: "80%",
-          // backgroundRepeat: "no-repeat",
         }}
       >
         {/* Gradient overlay */}
