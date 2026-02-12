@@ -38,7 +38,7 @@ function MovieCard({ movie, didDrag, small }: Props) {
         className={`${
           small
             ? "h-[315px] w-[230px] min-h-[160px] min-w-[110px]"
-            : "min-h-[315px] min-w-[230px]"
+            : "h-[315px] w-[230px] min-h-[315px] min-w-[230px]"
         } rounded-md object-cover transition-transform duration-300 hover:scale-105`}
       />
     </div>
