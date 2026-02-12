@@ -9,6 +9,7 @@ type Props = {
   sort?: string;
   movies?: Movie[];
   disableFetch?: boolean;
+  small?: boolean;
 };
 
 function MovieRow({
@@ -16,6 +17,7 @@ function MovieRow({
   sort,
   movies: injectedMovies,
   disableFetch,
+  small,
 }: Props) {
   const [movies, setMovies] = useState<Movie[]>(injectedMovies ?? []);
   const [loading, setLoading] = useState(!injectedMovies);
@@ -35,14 +37,15 @@ function MovieRow({
 
   function MovieSkeleton() {
     return (
-      <div className="h-[225px] w-[150px] rounded bg-gray-800 animate-pulse" />
+      <div
+        className={`${small ? "h-[160px] w-[110px]" : "h-[225px] w-[150px]"} rounded bg-gray-800 animate-pulse`}
+      />
     );
   }
 
   return (
     <section className="space-y-4">
       <h2 className="px-6 text-lg font-semibold text-white">{title}</h2>
-
       <div
         ref={drag.ref}
         {...drag.handlers}
@@ -60,6 +63,7 @@ function MovieRow({
                 key={movie.tmdb_id}
                 movie={movie}
                 didDrag={drag.didDrag}
+                small={small}
               />
             ))}
       </div>

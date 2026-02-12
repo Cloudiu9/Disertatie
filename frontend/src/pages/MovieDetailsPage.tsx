@@ -177,11 +177,12 @@ function MovieDetailsPage() {
       </div>
 
       {recommendations.length > 0 && (
-        <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <div>
           <MovieRow
             title="Recommended for you"
             movies={recommendations.filter((m) => m.tmdb_id !== movie.tmdb_id)}
             disableFetch
+            small
           />
         </div>
       )}
