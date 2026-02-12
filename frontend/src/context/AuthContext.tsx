@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 type User = {
   _id: string;
   email: string;
+  created_at?: string;
+  last_login?: string | null;
 };
 
 type AuthContextType = {

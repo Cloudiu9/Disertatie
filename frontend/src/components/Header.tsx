@@ -22,14 +22,12 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
-  /* ---------------- outside click handling ---------------- */
-  // useEffect(() => {})          // Runs after every re-render         causes a 'side effect'
-  // useEffect(() => {}, [])      // Runs only on mount (add a component to the DOM)
-  // useEffect(() => {}, [value]) // Runs on mount + when value changes
+  /* ---------------- outside click handling for search ---------------- */
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -41,7 +39,22 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  /* ---------------- debounced backend search ---------------- */
+  /* outside click handling for dropdown */
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, []);
+
+  /* debounced backend search  */
   const doSearch = debounce(async (q: string) => {
     if (!q) {
       setSearchResults([]);
@@ -169,7 +182,7 @@ export default function Header() {
             )}
           </div>
 
-          <div className="relative">
+          <div className="relative" ref={dropdownRef}>
             {user ? (
               <>
                 <button
@@ -181,6 +194,14 @@ export default function Header() {
 
                 {open && (
                   <div className="absolute right-0 mt-2 w-40 rounded bg-zinc-900 border border-zinc-700 shadow-lg">
+                    <Link
+                      to="/profile"
+                      onClick={() => setOpen(false)}
+                      className="block px-4 py-2 hover:bg-zinc-700"
+                    >
+                      Profile
+                    </Link>
+
                     <button
                       onClick={async () => {
                         await logout();

@@ -131,7 +131,15 @@ def me():
         return jsonify({"error": "Unauthorized"}), 401
 
     user["_id"] = str(user["_id"])
+
+    if user.get("created_at"):
+        user["created_at"] = user["created_at"].isoformat()
+
+    if user.get("last_login"):
+        user["last_login"] = user["last_login"].isoformat()
+
     return jsonify(user)
+
 
 @bp.route("/logout", methods=["POST"])
 def logout():
