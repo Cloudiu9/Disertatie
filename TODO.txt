@@ -72,11 +72,12 @@ and change hardcoded URLs so they don't bypass that if they included credentials
     }
 
 
-TODO Improve recommendations (collaborative filtering => account => what user adds to My List)
+--DONE FOR NOW-- Improve recommendations (collaborative filtering => account => what user adds to My List)
 WORKING ON: User-based recommendations
-  TODO Improve the user-based recommendation scripts
+  --DONE-- Improve the user-based recommendation scripts
+      - Recommend movies liked by behaviorally similar users, weighted by similarity strength, while reducing global popularity bias
 
-TODO Make Search results be right clickable/middle clickable so they can be opened in a new tab
+--DONE-- Make Search results be right clickable/middle clickable so they can be opened in a new tab
 
 
 

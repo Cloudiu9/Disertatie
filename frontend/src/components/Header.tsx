@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import debounce from "lodash.debounce";
 import type { Movie } from "../types/Movie";
@@ -14,8 +14,6 @@ const navItems = [
 ];
 
 export default function Header() {
-  const navigate = useNavigate();
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -39,7 +37,7 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  /* outside click handling for dropdown */
+  /* ---------------- outside click handling for dropdown ---------------- */
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (
@@ -54,7 +52,7 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  /* debounced backend search  */
+  /* ---------------- debounced backend search ---------------- */
   const doSearch = debounce(async (q: string) => {
     if (!q) {
       setSearchResults([]);
@@ -81,13 +79,6 @@ export default function Header() {
     const q = e.target.value;
     setSearchQuery(q);
     doSearch(q.trim());
-  };
-
-  const onResultClick = (movie: Movie) => {
-    setSearchOpen(false);
-    setSearchQuery("");
-    setSearchResults([]);
-    navigate(`/movies/${movie.tmdb_id}`);
   };
 
   return (
@@ -154,10 +145,15 @@ export default function Header() {
 
                 {!searchLoading &&
                   searchResults.map((movie) => (
-                    <div
+                    <Link
                       key={movie.tmdb_id}
-                      onClick={() => onResultClick(movie)}
-                      className="flex cursor-pointer items-center gap-3 border-b border-gray-800 p-3 hover:bg-gray-800"
+                      to={`/movies/${movie.tmdb_id}`}
+                      onClick={() => {
+                        setSearchOpen(false);
+                        setSearchQuery("");
+                        setSearchResults([]);
+                      }}
+                      className="flex items-center gap-3 border-b border-gray-800 p-3 hover:bg-gray-800 focus:bg-gray-800"
                     >
                       <img
                         src={
@@ -176,12 +172,13 @@ export default function Header() {
                           {movie.year ?? ""}
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
               </div>
             )}
           </div>
 
+          {/* USER DROPDOWN */}
           <div className="relative" ref={dropdownRef}>
             {user ? (
               <>
@@ -206,7 +203,6 @@ export default function Header() {
                       onClick={async () => {
                         await logout();
                         setOpen(false);
-                        navigate("/");
                       }}
                       className="block w-full px-4 py-2 text-left text-sm hover:bg-zinc-800"
                     >
