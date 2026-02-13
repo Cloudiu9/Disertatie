@@ -9,6 +9,10 @@ db = client["movie_platform"]
 
 movies_collection = db["movies"]
 users_collection = db["users"]
+users_collection.create_index("my_list")
+movies_collection.create_index("tmdb_id", unique=True)
+movies_collection.create_index("popularity")
+
 
 # create unique index once (safe to call multiple times)
 users_collection.create_index("email", unique=True)
