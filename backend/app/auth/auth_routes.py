@@ -12,6 +12,7 @@ bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_EXPIRES_DAYS = int(os.getenv("JWT_EXPIRES_DAYS", 7))
 
+IS_PROD = os.getenv("FLASK_ENV") == "production"
 
 # ------------------------
 # HELPERS
@@ -108,9 +109,8 @@ def login():
         "access_token",
         token,
         httponly=True,
-        # samesite="Lax",
-        samesite="None",
-        secure=True,
+        samesite="None" if IS_PROD else "Lax",
+        secure=IS_PROD,
         max_age=JWT_EXPIRES_DAYS * 24 * 60 * 60,
     )
 
@@ -131,4 +131,27 @@ def me():
         return jsonify({"error": "Unauthorized"}), 401
 
     user["_id"] = str(user["_id"])
+
+    if user.get("created_at"):
+        user["created_at"] = user["created_at"].isoformat()
+
+    if user.get("last_login"):
+        user["last_login"] = user["last_login"].isoformat()
+
     return jsonify(user)
+
+
+@bp.route("/logout", methods=["POST"])
+def logout():
+    response = make_response(jsonify({"status": "logged_out"}))
+
+    response.set_cookie(
+        "access_token",
+        "",
+        expires=0,
+        httponly=True,
+        samesite="None",
+        secure=True,
+    )
+
+    return response

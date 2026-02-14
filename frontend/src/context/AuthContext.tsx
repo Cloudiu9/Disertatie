@@ -1,9 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import * as authApi from "../api/auth";
+import toast from "react-hot-toast";
 
 type User = {
   _id: string;
   email: string;
+  created_at?: string;
+  last_login?: string | null;
 };
 
 type AuthContextType = {
@@ -12,6 +15,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   refreshMe: () => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -28,13 +32,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function login(email: string, password: string) {
-    await authApi.login(email, password);
-    await refreshMe();
+    try {
+      await authApi.login(email, password);
+      await refreshMe();
+      toast.success("Logged in successfully");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Login failed");
+      throw err;
+    }
   }
 
   async function register(email: string, password: string) {
-    await authApi.register(email, password);
-    await login(email, password);
+    try {
+      await authApi.register(email, password);
+      await login(email, password);
+      toast.success("Account created successfully");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Registration failed");
+      throw err;
+    }
+  }
+
+  async function logout() {
+    await authApi.logout();
+    setUser(null);
+    toast.success("Logged out");
   }
 
   useEffect(() => {
@@ -42,7 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, refreshMe }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, refreshMe, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

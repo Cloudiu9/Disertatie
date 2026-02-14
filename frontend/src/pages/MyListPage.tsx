@@ -29,7 +29,8 @@ function MyListPage() {
             Your List is Empty
           </h1>
           <p className="text-gray-400 text-lg mb-6">
-            Start adding movies to build your personalized collection
+            Start by logging in and add movies to build your personalized
+            collection
           </p>
         </div>
       </div>

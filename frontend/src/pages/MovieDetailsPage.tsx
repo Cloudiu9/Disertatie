@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import type { Movie } from "../types/Movie";
 import MovieRow from "../components/MovieRow";
 import { addToMyList, removeFromMyList } from "../api/myList";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -12,6 +14,7 @@ function MovieDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [inMyList, setInMyList] = useState(false);
+  const { user } = useAuth();
 
   // Recommendations
   useEffect(() => {
@@ -44,7 +47,7 @@ function MovieDetailsPage() {
   useEffect(() => {
     if (!movie) return;
 
-    fetch("http://127.0.0.1:5000/api/my-list", {
+    fetch("/api/my-list", {
       credentials: "include",
     })
       .then((res) => {
@@ -79,7 +82,6 @@ function MovieDetailsPage() {
     ? `${IMAGE_BASE}/w500${movie.poster_path}`
     : "/placeholder-poster.png";
 
-  // TODO Add movie.backdrop_path via the backend
   const backdropUrl = movie.backdrop_path
     ? `${IMAGE_BASE}/original${movie.backdrop_path}`
     : undefined;
@@ -91,9 +93,6 @@ function MovieDetailsPage() {
         className="relative h-[90vh] w-full bg-cover bg-center bg-[center_30%]"
         style={{
           backgroundImage: backdropUrl ? `url(${backdropUrl})` : undefined,
-          // make it less zoomed, potential fix?
-          // backgroundSize: "80%",
-          // backgroundRepeat: "no-repeat",
         }}
       >
         {/* Gradient overlay */}
@@ -144,12 +143,23 @@ function MovieDetailsPage() {
                   onClick={async () => {
                     if (!movie) return;
 
-                    if (inMyList) {
-                      await removeFromMyList(movie.tmdb_id);
-                      setInMyList(false);
-                    } else {
-                      await addToMyList(movie.tmdb_id);
-                      setInMyList(true);
+                    if (!user) {
+                      toast.error("You must be logged in to use My List");
+                      return;
+                    }
+
+                    try {
+                      if (inMyList) {
+                        await removeFromMyList(movie.tmdb_id);
+                        setInMyList(false);
+                        toast.success("Removed from My List");
+                      } else {
+                        await addToMyList(movie.tmdb_id);
+                        setInMyList(true);
+                        toast.success("Added to My List");
+                      }
+                    } catch {
+                      toast.error("Action failed");
                     }
                   }}
                   className="rounded bg-white/20 px-6 py-2 text-sm font-semibold hover:bg-white/30 transition"
@@ -163,11 +173,12 @@ function MovieDetailsPage() {
       </div>
 
       {recommendations.length > 0 && (
-        <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <div>
           <MovieRow
             title="Recommended for you"
             movies={recommendations.filter((m) => m.tmdb_id !== movie.tmdb_id)}
             disableFetch
+            small
           />
         </div>
       )}

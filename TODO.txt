@@ -40,9 +40,45 @@ Emmanuelle
     - Recommendations
 
 -DONE- 1. Fix Top Rated (add a cutoff point for the votes ex: min 2000)
-TODO 2. Make recommendation row start earlier and end later, in order to fit all movies without scrolling
-TODO 3. Improve recommendations (collaborative filtering => account => what user clicks on / likes)
+-DONE- 2. Make recommendation row start earlier and end later, in order to fit all movies without scrolling
 
-WORKING ON: AUTHENTICATION
-TODO - Add confirmation on successful register/login
-TODO - Add logout functionality
+DONE: AUTHENTICATION
+--DONE-- - Add confirmation on successful register/login
+--DONE-- - Add logout functionality
+
+struggled a lot with route security because of user_recommendations, had to use
+    samesite="None" if IS_PROD else "Lax",
+    secure=IS_PROD,
+
+also had to reroute server in vite.config.ts:
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+and change hardcoded URLs so they don't bypass that if they included credentials.
+    fetch("/api/my-list", {
+      credentials: "include",
+    })
+
+    instead of 
+
+    fetch(`http://127.0.0.1:5000/api/movies/${id}`) {
+      credentials: "include",
+    }
+
+
+--DONE FOR NOW-- Improve recommendations (collaborative filtering => account => what user adds to My List)
+WORKING ON: User-based recommendations
+  --DONE-- Improve the user-based recommendation scripts
+      - Recommend movies liked by behaviorally similar users, weighted by similarity strength, while reducing global popularity bias
+
+--DONE-- Make Search results be right clickable/middle clickable so they can be opened in a new tab
+
+
+
+TODO AI Recommendations + Chatbot(?)

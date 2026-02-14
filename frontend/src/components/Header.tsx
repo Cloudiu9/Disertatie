@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { BellIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import debounce from "lodash.debounce";
 import type { Movie } from "../types/Movie";
+import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { label: "Browse", href: "/" },
@@ -13,23 +14,37 @@ const navItems = [
 ];
 
 export default function Header() {
-  const navigate = useNavigate();
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /* ---------------- outside click handling ---------------- */
-  // useEffect(() => {})          // Runs after every re-render         causes a 'side effect'
-  // useEffect(() => {}, [])      // Runs only on mount (add a component to the DOM)
-  // useEffect(() => {}, [value]) // Runs on mount + when value changes
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  /* ---------------- outside click handling for search ---------------- */
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, []);
+
+  /* ---------------- outside click handling for dropdown ---------------- */
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
       }
     };
 
@@ -64,13 +79,6 @@ export default function Header() {
     const q = e.target.value;
     setSearchQuery(q);
     doSearch(q.trim());
-  };
-
-  const onResultClick = (movie: Movie) => {
-    setSearchOpen(false);
-    setSearchQuery("");
-    setSearchResults([]);
-    navigate(`/movies/${movie.tmdb_id}`);
   };
 
   return (
@@ -137,10 +145,15 @@ export default function Header() {
 
                 {!searchLoading &&
                   searchResults.map((movie) => (
-                    <div
+                    <Link
                       key={movie.tmdb_id}
-                      onClick={() => onResultClick(movie)}
-                      className="flex cursor-pointer items-center gap-3 border-b border-gray-800 p-3 hover:bg-gray-800"
+                      to={`/movies/${movie.tmdb_id}`}
+                      onClick={() => {
+                        setSearchOpen(false);
+                        setSearchQuery("");
+                        setSearchResults([]);
+                      }}
+                      className="flex items-center gap-3 border-b border-gray-800 p-3 hover:bg-gray-800 focus:bg-gray-800"
                     >
                       <img
                         src={
@@ -159,21 +172,56 @@ export default function Header() {
                           {movie.year ?? ""}
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
               </div>
             )}
           </div>
 
-          <BellIcon className="h-5 w-5 hover:text-white transition" />
+          {/* USER DROPDOWN */}
+          <div className="relative" ref={dropdownRef}>
+            {user ? (
+              <>
+                <button
+                  onClick={() => setOpen((o) => !o)}
+                  className="rounded-full bg-white/20 px-4 py-2 text-sm hover:bg-white/30 transition"
+                >
+                  {user.email}
+                </button>
 
-          <Link to="/profile">
-            <img
-              src="https://i.pravatar.cc/40?img=32"
-              alt="Profile"
-              className="h-8 w-8 rounded"
-            />
-          </Link>
+                {open && (
+                  <div className="absolute right-0 mt-2 w-40 rounded bg-zinc-900 border border-zinc-700 shadow-lg">
+                    <Link
+                      to="/profile"
+                      onClick={() => setOpen(false)}
+                      className="block px-4 py-2 hover:bg-zinc-700"
+                    >
+                      Profile
+                    </Link>
+
+                    <button
+                      onClick={async () => {
+                        await logout();
+                        setOpen(false);
+                      }}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-zinc-800"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex gap-4 text-sm">
+                <Link to="/login" className="hover:text-white">
+                  Login
+                </Link>
+                <Link to="/register" className="hover:text-white">
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

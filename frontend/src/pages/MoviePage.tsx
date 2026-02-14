@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { fetchMovies, searchMovies } from "../api/movies";
 import type { Movie } from "../types/Movie";
-import { Link } from "react-router-dom";
 import MovieRow from "../components/MovieRow";
 import Hero from "../components/HeroBanner";
+import UserRecommendationsRow from "../components/UserRecommendationsRow";
 
 function MoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -63,6 +63,7 @@ function MoviesPage() {
     <div className="space-y-12 pb-12">
       <Hero />
 
+      <UserRecommendationsRow />
       <MovieRow title="Popular Now" sort="popularity" />
       <MovieRow title="Top Rated" sort="rating" />
       <MovieRow title="Newest Releases" sort="year" />
