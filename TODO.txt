@@ -79,6 +79,7 @@ WORKING ON: User-based recommendations
 
 --DONE-- Make Search results be right clickable/middle clickable so they can be opened in a new tab
 
-
+TODO Improve the Hero Section, make it scrollable with ~5 movies, dynamic/different on reload
+TODO Add the separate routes from the navbar (TV Series, etc.)
 
 TODO AI Recommendations + Chatbot(?)
