@@ -5,6 +5,7 @@ import MovieRow from "../components/MovieRow";
 import { addToMyList, removeFromMyList } from "../api/myList";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
+import MovieMeta from "../components/MovieMeta";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -113,11 +114,7 @@ function MovieDetailsPage() {
               <h1 className="mb-4 text-4xl font-extrabold">{movie.title}</h1>
 
               <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-300">
-                {movie.year && <span>{movie.year}</span>}
-                {movie.runtime && <span>{movie.runtime} min</span>}
-                <span className="text-green-400">
-                  ⭐ {movie.rating.toFixed(1)}
-                </span>
+                <MovieMeta year={movie.year} rating={movie.rating} />
               </div>
 
               <div className="mb-4 flex flex-wrap gap-2 text-sm text-gray-200">

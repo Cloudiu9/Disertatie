@@ -7,7 +7,6 @@ import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { label: "Browse", href: "/" },
-  { label: "TV Shows", href: "/tv" },
   { label: "Movies", href: "/movies" },
   { label: "New & Popular", href: "/new" },
   { label: "My List", href: "/my-list" },
@@ -25,7 +24,7 @@ export default function Header() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
-  /* ---------------- outside click handling for search ---------------- */
+  /* outside click handling for search  */
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -37,7 +36,7 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  /* ---------------- outside click handling for dropdown ---------------- */
+  /*  outside click handling for dropdown */
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (
@@ -52,7 +51,7 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  /* ---------------- debounced backend search ---------------- */
+  /* debounced backend search */
   const doSearch = debounce(async (q: string) => {
     if (!q) {
       setSearchResults([]);
