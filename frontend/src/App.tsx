@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Header from "./components/Header";
-import MoviesPage from "./pages/MoviePage";
+import MoviesPage from "./pages/MoviesPage";
 import MovieDetailsPage from "./pages/MovieDetailsPage";
 import MyListPage from "./pages/MyListPage";
 import LoginPage from "./pages/LoginPage";

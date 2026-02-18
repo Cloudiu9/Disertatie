@@ -7,6 +7,7 @@ import { useDragScroll } from "../hooks/useDragScroll";
 type Props = {
   title: string;
   sort?: string;
+  genre?: string;
   movies?: Movie[];
   disableFetch?: boolean;
   small?: boolean;
@@ -15,6 +16,7 @@ type Props = {
 function MovieRow({
   title,
   sort,
+  genre,
   movies: injectedMovies,
   disableFetch,
   small,
@@ -29,11 +31,11 @@ function MovieRow({
 
     setLoading(true);
 
-    fetchMovies(1, 20, sort).then((data) => {
+    fetchMovies(1, 20, sort, genre).then((data) => {
       setMovies(data.results);
       setLoading(false);
     });
-  }, [sort, disableFetch]);
+  }, [sort, genre, disableFetch]);
 
   function MovieSkeleton() {
     return (

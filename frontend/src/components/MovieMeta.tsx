@@ -5,7 +5,7 @@ type Props = {
 };
 
 function getRatingColor(score: number) {
-  if (score <= 4) return "text-red-500";
+  if (score <= 5) return "text-red-500";
   if (score <= 6.5) return "text-orange-400";
   if (score <= 8) return "text-green-500";
   return "text-sky-500";

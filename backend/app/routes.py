@@ -10,6 +10,7 @@ def get_movies():
     skip = (page - 1) * limit
 
     sort_param = request.args.get("sort", "rating")
+    genre_param = request.args.get("genre")
 
     SORT_FIELDS = {
         "rating": "rating",
@@ -19,33 +20,46 @@ def get_movies():
 
     sort_field = SORT_FIELDS.get(sort_param, "rating")
 
-    # Apply vote cutoff only for top-rated movies
+    # ------------------------
+    # FILTER BUILDING
+    # ------------------------
     filter_query = {}
-    if sort_field == "rating":
-        filter_query = {"votes": {"$gt": 2000}}
 
+    # Vote cutoff for rating sort
+    if sort_field == "rating":
+        filter_query["votes"] = {"$gt": 2000}
+
+    # Genre filter
+    if genre_param:
+        filter_query["genres"] = genre_param
+
+
+    # ------------------------
+    # QUERY
+    # ------------------------
     movies_cursor = (
         movies_collection
         .find(filter_query, {"_id": 0})
-        .sort([(sort_field, -1),
+        .sort([
+            (sort_field, -1),
             ("tmdb_id", 1)
         ])
         .skip(skip)
         .limit(limit)
     )
 
-
     movies = list(movies_cursor)
     total = movies_collection.count_documents(filter_query)
-
 
     return jsonify({
         "page": page,
         "limit": limit,
         "sort": sort_field,
+        "genre": genre_param,
         "total": total,
         "results": movies
     })
+
 
 @bp.route("/api/movies/<int:tmdb_id>", methods=["GET"])
 def get_movie(tmdb_id):
@@ -74,3 +88,9 @@ def search_movies():
     )
 
     return jsonify(list(movies))
+
+@bp.route("/api/genres", methods=["GET"])
+def get_genres():
+    genres = movies_collection.distinct("genres")
+    genres = sorted(genres)
+    return jsonify(genres)

@@ -25,6 +25,9 @@ Play Time,
 High Art,
 Emmanuelle
 
+REMOVE:
+Hot Girls Wanted
+
 - Make a real README.md with all the steps of functionality (ex: make env files in backend/frontend, run seed_movies.py, build_content_recommender, etc.)/project description
     Setup:
     - Install the dependencies: "pip install -r requirements.txt" from backend + other unlisted dependencies / "npm install package.json" from frontend 
@@ -81,8 +84,11 @@ WORKING ON: User-based recommendations
 
 --DONE-- Improve the Hero Section, make it scrollable with ~5 movies, dynamic/different on reload
 --DONE-- Improve the "Score" rating for a movie (ex: only limit to 2 digits: 7.5, 6.2; color it differently for each range: 1-4 red (bad), 5-7 orange(okay), 8-10 good (green))
-TODO Add option to remove movie directly from My List
 TODO Add sorting/filtering/genres/better pagination to the main page
+
+TODO Improve feel of responsive design on smaller screens. (genres list vertically, smaller movie cards, smaller text on details page)
+
+TODO Add option to remove movie directly from My List
 
 
 TODO Add the separate routes from the navbar (New, etc.)
