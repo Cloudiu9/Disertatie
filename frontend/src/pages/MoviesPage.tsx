@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchGenres } from "../api/movies";
 import MovieRow from "../components/MovieRow";
 import Hero from "../components/HeroBanner";
@@ -21,31 +21,33 @@ function MoviesPage() {
       <MovieRow title="Newest Releases" sort="year" />
 
       {/* Genre Selector */}
-      <section className="space-y-4 px-6">
-        <h2 className="text-lg font-semibold text-white">Browse by Genre</h2>
-        <div className="flex justify-center">
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-700">
-            {genres.map((genre) => {
-              const active = selectedGenre === genre;
-              return (
-                <button
-                  key={genre}
-                  onClick={() => setSelectedGenre(active ? null : genre)}
-                  className={`
-                    px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap
-                    transition-all duration-200
-                    ${
-                      active
-                        ? "bg-red-600 text-white scale-105"
-                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                    }
-                  `}
-                >
-                  {genre}
-                </button>
-              );
-            })}
-          </div>
+      <section className="space-y-4 px-4 sm:px-6">
+        <h2 className="text-base sm:text-lg font-semibold text-white text-center sm:text-left">
+          Browse by Genre
+        </h2>
+
+        <div className="flex flex-col sm:flex-row sm:justify-center gap-3">
+          {genres.map((genre) => {
+            const active = selectedGenre === genre;
+
+            return (
+              <button
+                key={genre}
+                onClick={() => setSelectedGenre(active ? null : genre)}
+                className={`
+            px-4 py-2 rounded-full text-sm font-medium
+            transition-all duration-200
+            ${
+              active
+                ? "bg-red-600 text-white scale-105"
+                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+            }
+          `}
+              >
+                {genre}
+              </button>
+            );
+          })}
         </div>
       </section>
 
