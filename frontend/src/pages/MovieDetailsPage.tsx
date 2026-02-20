@@ -154,7 +154,7 @@ function MovieDetailsPage() {
           title="Recommended for you"
           movies={recommendations.filter((m) => m.tmdb_id !== movie.tmdb_id)}
           disableFetch
-          small
+          variant="recommendation"
         />
       )}
 

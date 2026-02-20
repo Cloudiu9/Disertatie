@@ -87,9 +87,9 @@ WORKING ON: User-based recommendations
 --DONE-- Add sorting/
       filtering/
       genres/
-TODO? better pagination to the main page
+--DONE--? better pagination to the main page
 
-TODO Improve feel of responsive design on smaller screens. (genres list vertically, smaller movie cards, smaller text on details page)
+--DONE-- Improve feel of responsive design on smaller screens. (genres list vertically, smaller movie cards, smaller text on details page)
 
 TODO Add option to remove movie directly from My List
 

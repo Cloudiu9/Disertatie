@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Movie } from "../types/Movie";
 import { fetchMovies } from "../api/movies";
 import MovieCard from "./MovieCard";
@@ -10,7 +10,7 @@ type Props = {
   genre?: string;
   movies?: Movie[];
   disableFetch?: boolean;
-  small?: boolean;
+  variant?: "default" | "compact" | "recommendation";
 };
 
 function MovieRow({
@@ -19,7 +19,7 @@ function MovieRow({
   genre,
   movies: injectedMovies,
   disableFetch,
-  small,
+  variant,
 }: Props) {
   const [movies, setMovies] = useState<Movie[]>(injectedMovies ?? []);
   const [loading, setLoading] = useState(!injectedMovies);
@@ -27,6 +27,7 @@ function MovieRow({
   const [hasMore, setHasMore] = useState(true);
 
   const drag = useDragScroll();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (disableFetch) return;
@@ -41,29 +42,36 @@ function MovieRow({
     });
   }, [sort, genre, disableFetch]);
 
-  function loadMore() {
-    const nextPage = page + 1;
-    setLoading(true);
+  // Infinite scroll trigger
+  useEffect(() => {
+    if (!hasMore || disableFetch) return;
 
-    fetchMovies(nextPage, 20, sort, genre).then((data) => {
-      setMovies((prev) => [...prev, ...data.results]);
-      setHasMore(data.results.length === 20);
-      setPage(nextPage);
-      setLoading(false);
-    });
-  }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading) {
+          const nextPage = page + 1;
+          setLoading(true);
 
-  function MovieSkeleton() {
-    return (
-      <div
-        className={`${
-          small
-            ? "h-[140px] w-[95px] sm:h-[160px] sm:w-[110px]"
-            : "h-[200px] w-[130px] sm:h-[225px] sm:w-[150px]"
-        } rounded bg-gray-800 animate-pulse`}
-      />
+          fetchMovies(nextPage, 20, sort, genre).then((data) => {
+            setMovies((prev) => [...prev, ...data.results]);
+            setHasMore(data.results.length === 20);
+            setPage(nextPage);
+            setLoading(false);
+          });
+        }
+      },
+      {
+        root: drag.ref.current,
+        threshold: 0.5,
+      },
     );
-  }
+
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [page, hasMore, loading, sort, genre, disableFetch]);
 
   return (
     <section className="space-y-4">
@@ -81,28 +89,18 @@ function MovieRow({
           cursor-grab active:cursor-grabbing
         "
       >
-        {loading && movies.length === 0
-          ? Array.from({ length: 10 }).map((_, i) => <MovieSkeleton key={i} />)
-          : movies.map((movie) => (
-              <MovieCard
-                key={movie.tmdb_id}
-                movie={movie}
-                didDrag={drag.didDrag}
-                small={small}
-              />
-            ))}
-      </div>
+        {movies.map((movie) => (
+          <MovieCard
+            key={movie.tmdb_id}
+            movie={movie}
+            didDrag={drag.didDrag}
+            variant={variant}
+          />
+        ))}
 
-      {hasMore && !disableFetch && (
-        <div className="flex justify-center">
-          <button
-            onClick={loadMore}
-            className="mt-2 px-5 py-2 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded transition"
-          >
-            {loading ? "Loading..." : "Load More"}
-          </button>
-        </div>
-      )}
+        {/* Sentinel for infinite scroll */}
+        {hasMore && <div ref={sentinelRef} className="w-10" />}
+      </div>
     </section>
   );
 }
