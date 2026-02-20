@@ -29,17 +29,27 @@ function MovieCard({ movie, didDrag, small }: Props) {
     <div
       onClick={handleClick}
       draggable={false}
-      className={`${small ? "min-w-[110px]" : "min-w-[230px]"} cursor-pointer select-none`}
+      className={`
+        cursor-pointer select-none
+        ${
+          small
+            ? "min-w-[95px] sm:min-w-[110px] lg:min-w-[150px]"
+            : "min-w-[130px] sm:min-w-[150px] lg:min-w-[230px]"
+        }
+      `}
     >
       <img
         src={posterUrl}
         alt={movie.title}
         draggable={false}
-        className={`${
-          small
-            ? "h-[315px] w-[230px] min-h-[160px] min-w-[110px]"
-            : "h-[315px] w-[230px] min-h-[315px] min-w-[230px]"
-        } rounded-md object-cover transition-transform duration-300 hover:scale-105`}
+        className={`
+          rounded-md object-cover transition-transform duration-300 hover:scale-105
+          ${
+            small
+              ? "h-[140px] w-[95px] sm:h-[160px] sm:w-[110px] lg:h-[200px] lg:w-[150px]"
+              : "h-[200px] w-[130px] sm:h-[225px] sm:w-[150px] lg:h-[315px] lg:w-[230px]"
+          }
+        `}
       />
     </div>
   );

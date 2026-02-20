@@ -17,22 +17,17 @@ function MovieDetailsPage() {
   const [inMyList, setInMyList] = useState(false);
   const { user } = useAuth();
 
-  // Recommendations
   useEffect(() => {
     if (!id) return;
 
-    setRecommendations([]); // hard reset to prevent stale UI
+    setRecommendations([]);
 
     fetch(`http://127.0.0.1:5000/api/recommendations/movie/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Recommendations fetch failed");
-        return res.json();
-      })
+      .then((res) => res.json())
       .then(setRecommendations)
       .catch(() => setRecommendations([]));
   }, [id]);
 
-  // Displaying movies
   useEffect(() => {
     setLoading(true);
 
@@ -44,40 +39,30 @@ function MovieDetailsPage() {
       });
   }, [id]);
 
-  // My List
   useEffect(() => {
     if (!movie) return;
 
-    fetch("/api/my-list", {
-      credentials: "include",
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Not authenticated");
-        return res.json();
-      })
+    fetch("/api/my-list", { credentials: "include" })
+      .then((res) => res.json())
       .then((list: Movie[]) => {
         setInMyList(list.some((m) => m.tmdb_id === movie.tmdb_id));
       })
-      .catch(() => {
-        setInMyList(false);
-      });
+      .catch(() => setInMyList(false));
   }, [movie]);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
         Loading...
       </div>
     );
-  }
 
-  if (!movie) {
+  if (!movie)
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
         Movie not found
       </div>
     );
-  }
 
   const posterUrl = movie.poster_path
     ? `${IMAGE_BASE}/w500${movie.poster_path}`
@@ -89,35 +74,32 @@ function MovieDetailsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Backdrop */}
       <div
-        className="relative h-[90vh] w-full bg-cover bg-center bg-[center_30%]"
+        className="relative h-[70vh] sm:h-[85vh] w-full bg-cover bg-center bg-[center_30%]"
         style={{
           backgroundImage: backdropUrl ? `url(${backdropUrl})` : undefined,
         }}
       >
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/20" />
 
-        {/* Content */}
-        <div className="relative z-10 mx-auto flex h-full max-w-screen-2xl items-end px-6 pb-12">
-          <div className="flex gap-8">
-            {/* Poster */}
+        <div className="relative z-10 mx-auto flex h-full max-w-screen-2xl items-end px-4 sm:px-6 pb-8 sm:pb-12">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8">
             <img
               src={posterUrl}
               alt={movie.title}
-              className="hidden w-[220px] rounded-lg shadow-xl md:block"
+              className="hidden md:block w-[180px] lg:w-[220px] rounded-lg shadow-xl"
             />
 
-            {/* Info */}
             <div className="max-w-2xl">
-              <h1 className="mb-4 text-4xl font-extrabold">{movie.title}</h1>
+              <h1 className="mb-3 text-2xl sm:text-3xl lg:text-4xl font-extrabold">
+                {movie.title}
+              </h1>
 
-              <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-300">
+              <div className="mb-3 text-sm sm:text-base text-gray-300">
                 <MovieMeta year={movie.year} rating={movie.rating} />
               </div>
 
-              <div className="mb-4 flex flex-wrap gap-2 text-sm text-gray-200">
+              <div className="mb-3 flex flex-wrap gap-2 text-xs sm:text-sm text-gray-200">
                 {movie.genres.map((g) => (
                   <span key={g} className="rounded bg-white/10 px-2 py-1">
                     {g}
@@ -126,22 +108,20 @@ function MovieDetailsPage() {
               </div>
 
               {movie.overview && (
-                <p className="max-w-xl text-sm leading-relaxed text-gray-200">
+                <p className="max-w-xl text-xs sm:text-sm leading-relaxed text-gray-200">
                   {movie.overview}
                 </p>
               )}
 
-              {/* Actions (future-proof) */}
-              <div className="mt-6 flex gap-4">
-                <button className="rounded bg-white px-6 py-2 text-sm font-semibold text-black hover:bg-gray-200 transition">
+              <div className="mt-6 flex gap-3">
+                <button className="rounded bg-white px-5 py-2 text-xs sm:text-sm font-semibold text-black hover:bg-gray-200 transition">
                   Play
                 </button>
+
                 <button
                   onClick={async () => {
-                    if (!movie) return;
-
                     if (!user) {
-                      toast.error("You must be logged in to use My List");
+                      toast.error("Login required");
                       return;
                     }
 
@@ -149,17 +129,17 @@ function MovieDetailsPage() {
                       if (inMyList) {
                         await removeFromMyList(movie.tmdb_id);
                         setInMyList(false);
-                        toast.success("Removed from My List");
+                        toast.success("Removed");
                       } else {
                         await addToMyList(movie.tmdb_id);
                         setInMyList(true);
-                        toast.success("Added to My List");
+                        toast.success("Added");
                       }
                     } catch {
                       toast.error("Action failed");
                     }
                   }}
-                  className="rounded bg-white/20 px-6 py-2 text-sm font-semibold hover:bg-white/30 transition"
+                  className="rounded bg-white/20 px-5 py-2 text-xs sm:text-sm font-semibold hover:bg-white/30 transition"
                 >
                   {inMyList ? "✓ In My List" : "+ My List"}
                 </button>
@@ -170,21 +150,18 @@ function MovieDetailsPage() {
       </div>
 
       {recommendations.length > 0 && (
-        <div>
-          <MovieRow
-            title="Recommended for you"
-            movies={recommendations.filter((m) => m.tmdb_id !== movie.tmdb_id)}
-            disableFetch
-            small
-          />
-        </div>
+        <MovieRow
+          title="Recommended for you"
+          movies={recommendations.filter((m) => m.tmdb_id !== movie.tmdb_id)}
+          disableFetch
+          small
+        />
       )}
 
-      {/* Back navigation */}
-      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-6 sm:py-8">
         <Link
           to="/"
-          className="text-sm text-gray-400 hover:text-white transition"
+          className="text-xs sm:text-sm text-gray-400 hover:text-white transition"
         >
           ← Back to browse
         </Link>
