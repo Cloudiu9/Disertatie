@@ -5,11 +5,12 @@ type Props = {
   movie: Movie;
   didDrag: React.MutableRefObject<boolean>;
   variant?: "default" | "compact" | "recommendation";
+  onRemove?: (tmdb_id: number) => void;
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
-function MovieCard({ movie, didDrag, variant = "default" }: Props) {
+function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
   const navigate = useNavigate();
 
   const handleClick = (e: React.MouseEvent) => {
@@ -19,6 +20,11 @@ function MovieCard({ movie, didDrag, variant = "default" }: Props) {
       return;
     }
     navigate(`/movies/${movie.tmdb_id}`);
+  };
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRemove?.(movie.tmdb_id);
   };
 
   const posterUrl = movie.poster_path
@@ -48,15 +54,35 @@ function MovieCard({ movie, didDrag, variant = "default" }: Props) {
     <div
       onClick={handleClick}
       draggable={false}
-      className={`cursor-pointer select-none ${containerWidth}`}
+      className={`relative cursor-pointer select-none ${containerWidth}`}
     >
+      {/* Remove button */}
+      {onRemove && (
+        <button
+          onClick={handleRemove}
+          className="
+            absolute top-2 right-2
+            bg-black/70 hover:bg-black
+            text-white
+            rounded-full
+            w-7 h-7
+            text-sm
+            flex items-center justify-center
+            z-10
+          "
+        >
+          ×
+        </button>
+      )}
+
       <img
         src={posterUrl}
         alt={movie.title}
         draggable={false}
         className={`
+          rounded-md object-cover
+          transition-transform duration-300 hover:scale-105
           ${sizeClasses[variant]}
-          rounded-md object-cover transition-transform duration-300 hover:scale-105
         `}
       />
     </div>

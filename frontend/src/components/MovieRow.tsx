@@ -11,6 +11,7 @@ type Props = {
   movies?: Movie[];
   disableFetch?: boolean;
   variant?: "default" | "compact" | "recommendation";
+  onRemove?: (tmdb_id: number) => void;
 };
 
 function MovieRow({
@@ -20,8 +21,9 @@ function MovieRow({
   movies: injectedMovies,
   disableFetch,
   variant,
+  onRemove,
 }: Props) {
-  const [movies, setMovies] = useState<Movie[]>(injectedMovies ?? []);
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(!injectedMovies);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -73,6 +75,13 @@ function MovieRow({
     return () => observer.disconnect();
   }, [page, hasMore, loading, sort, genre, disableFetch]);
 
+  // Syncing for instant removal from MyList
+  useEffect(() => {
+    if (injectedMovies) {
+      setMovies(injectedMovies);
+    }
+  }, [injectedMovies]);
+
   return (
     <section className="space-y-4">
       <h2 className="px-6 text-base sm:text-lg font-semibold text-white">
@@ -95,6 +104,7 @@ function MovieRow({
             movie={movie}
             didDrag={drag.didDrag}
             variant={variant}
+            onRemove={onRemove}
           />
         ))}
 

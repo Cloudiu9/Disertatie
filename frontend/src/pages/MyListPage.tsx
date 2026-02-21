@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type { Movie } from "../types/Movie";
 import { fetchMyList } from "../api/myList";
 import MovieRow from "../components/MovieRow";
+import { removeFromMyList } from "../api/myList";
+import { toast } from "react-hot-toast";
 
 function MyListPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -12,6 +14,18 @@ function MyListPage() {
       .then(setMovies)
       .finally(() => setLoading(false));
   }, []);
+
+  const handleRemove = async (tmdb_id: number) => {
+    try {
+      await removeFromMyList(tmdb_id);
+
+      setMovies((prev) => prev.filter((m) => m.tmdb_id !== tmdb_id));
+
+      toast.success("Removed from My List");
+    } catch {
+      toast.error("Remove failed");
+    }
+  };
 
   if (loading) {
     return (
@@ -48,7 +62,12 @@ function MyListPage() {
             {movies.length} {movies.length === 1 ? "movie" : "movies"}
           </p>
         </div>
-        <MovieRow title="" movies={movies} disableFetch />
+        <MovieRow
+          title=""
+          movies={movies}
+          disableFetch
+          onRemove={handleRemove}
+        />
       </div>
     </div>
   );
