@@ -6,6 +6,8 @@ import { addToMyList, removeFromMyList } from "../api/myList";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import MovieMeta from "../components/MovieMeta";
+import TrailerModal from "../components/TrailerModal";
+import { fetchTrailer } from "../api/trailer";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -16,22 +18,34 @@ function MovieDetailsPage() {
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [inMyList, setInMyList] = useState(false);
   const { user } = useAuth();
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const [loadingTrailer, setLoadingTrailer] = useState(false);
+  const [prefetchedTrailer, setPrefetchedTrailer] = useState<string | null>(
+    null,
+  );
+
+  // ==========================
+  // Recommendations
+  // ==========================
 
   useEffect(() => {
     if (!id) return;
-
     setRecommendations([]);
-
-    fetch(`http://127.0.0.1:5000/api/recommendations/movie/${id}`)
+    fetch(`/api/recommendations/movie/${id}`)
       .then((res) => res.json())
       .then(setRecommendations)
       .catch(() => setRecommendations([]));
   }, [id]);
 
-  useEffect(() => {
-    setLoading(true);
+  // ==========================
+  // Movie load
+  // ==========================
 
-    fetch(`http://127.0.0.1:5000/api/movies/${id}`)
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    fetch(`/api/movies/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setMovie(data);
@@ -39,9 +53,12 @@ function MovieDetailsPage() {
       });
   }, [id]);
 
+  // ==========================
+  // My List state
+  // ==========================
+
   useEffect(() => {
     if (!movie) return;
-
     fetch("/api/my-list", { credentials: "include" })
       .then((res) => res.json())
       .then((list: Movie[]) => {
@@ -49,6 +66,24 @@ function MovieDetailsPage() {
       })
       .catch(() => setInMyList(false));
   }, [movie]);
+
+  // ==========================
+  // Trailer Prefetch
+  // ==========================
+
+  useEffect(() => {
+    if (!movie) return;
+    setPrefetchedTrailer(null);
+    fetchTrailer(movie.tmdb_id)
+      .then((d) => {
+        if (d.key) setPrefetchedTrailer(d.key);
+      })
+      .catch(() => {});
+  }, [movie]);
+
+  // ==========================
+  // Loading states
+  // ==========================
 
   if (loading)
     return (
@@ -64,6 +99,10 @@ function MovieDetailsPage() {
       </div>
     );
 
+  // ==========================
+  // Images
+  // ==========================
+
   const posterUrl = movie.poster_path
     ? `${IMAGE_BASE}/w500${movie.poster_path}`
     : "/placeholder-poster.png";
@@ -72,8 +111,35 @@ function MovieDetailsPage() {
     ? `${IMAGE_BASE}/original${movie.backdrop_path}`
     : undefined;
 
+  // ==========================
+  // Trailer handler
+  // ==========================
+
+  async function playTrailer() {
+    if (!movie) return;
+    setLoadingTrailer(true);
+    try {
+      let key = prefetchedTrailer;
+      if (!key) {
+        const data = await fetchTrailer(movie.tmdb_id);
+        key = data.key;
+      }
+      if (!key) {
+        toast.error("Trailer not available");
+        return;
+      }
+      setTrailerKey(key);
+      setTrailerOpen(true);
+    } catch {
+      toast.error("Trailer error");
+    } finally {
+      setLoadingTrailer(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* HERO */}
       <div
         className="relative h-[70vh] sm:h-[85vh] w-full bg-cover bg-center bg-[center_30%]"
         style={{
@@ -113,9 +179,13 @@ function MovieDetailsPage() {
                 </p>
               )}
 
+              {/* BUTTONS */}
               <div className="mt-6 flex gap-3">
-                <button className="rounded bg-white px-5 py-2 text-xs sm:text-sm font-semibold text-black hover:bg-gray-200 transition">
-                  Play
+                <button
+                  onClick={playTrailer}
+                  className="cursor-pointer rounded bg-white px-6 py-2 text-sm font-semibold text-black hover:bg-gray-200 transition"
+                >
+                  {loadingTrailer ? "Loading" : "Play"}
                 </button>
 
                 <button
@@ -124,7 +194,6 @@ function MovieDetailsPage() {
                       toast.error("Login required");
                       return;
                     }
-
                     try {
                       if (inMyList) {
                         await removeFromMyList(movie.tmdb_id);
@@ -139,7 +208,7 @@ function MovieDetailsPage() {
                       toast.error("Action failed");
                     }
                   }}
-                  className="rounded bg-white/20 px-5 py-2 text-xs sm:text-sm font-semibold hover:bg-white/30 transition"
+                  className="cursor-pointer rounded bg-white/20 px-5 py-2 text-xs sm:text-sm font-semibold hover:bg-white/30 transition"
                 >
                   {inMyList ? "✓ In My List" : "+ My List"}
                 </button>
@@ -149,6 +218,7 @@ function MovieDetailsPage() {
         </div>
       </div>
 
+      {/* RECOMMENDATIONS */}
       {recommendations.length > 0 && (
         <MovieRow
           title="Recommended for you"
@@ -158,6 +228,7 @@ function MovieDetailsPage() {
         />
       )}
 
+      {/* BACK LINK */}
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-6 sm:py-8">
         <Link
           to="/"
@@ -166,6 +237,14 @@ function MovieDetailsPage() {
           ← Back to browse
         </Link>
       </div>
+
+      {/* TRAILER */}
+      {trailerOpen && (
+        <TrailerModal
+          videoKey={trailerKey}
+          onClose={() => setTrailerOpen(false)}
+        />
+      )}
     </div>
   );
 }

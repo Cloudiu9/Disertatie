@@ -1,5 +1,11 @@
 from flask import Blueprint, jsonify, request
 from app.db import movies_collection
+import os
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+TMDB_KEY = os.getenv("TMDB_KEY")
 
 bp = Blueprint("routes", __name__)
 
@@ -58,6 +64,61 @@ def get_movies():
         "genre": genre_param,
         "total": total,
         "results": movies
+    })
+
+@bp.route("/api/movies/<int:tmdb_id>/trailer", methods=["GET"])
+def get_movie_trailer(tmdb_id):
+
+    url = f"https://api.themoviedb.org/3/movie/{tmdb_id}/videos"
+
+    res = requests.get(
+        url,
+        params={
+            "api_key": TMDB_KEY,
+            "language": "en-US"
+        }
+    )
+
+    if not res.ok:
+        return jsonify({"error": "TMDB error"}), 500
+
+    data = res.json()["results"]
+
+    # Priority selection
+    trailer = None
+
+    # 1 Official Trailer
+    for v in data:
+        if (
+            v["site"] == "YouTube"
+            and v["type"] == "Trailer"
+            and v.get("official")
+        ):
+            trailer = v
+            break
+
+    # 2 Any Trailer
+    if not trailer:
+        for v in data:
+            if (
+                v["site"] == "YouTube"
+                and v["type"] == "Trailer"
+            ):
+                trailer = v
+                break
+
+    # 3 Teaser fallback
+    if not trailer:
+        for v in data:
+            if v["site"] == "YouTube":
+                trailer = v
+                break
+
+    if not trailer:
+        return jsonify({"key": None})
+
+    return jsonify({
+        "key": trailer["key"]
     })
 
 

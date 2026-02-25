@@ -206,7 +206,7 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## 9. Planned Features
 
-- [ ] Trailer popup player
+- [x] Trailer popup player
 - [ ] Separate browse routes (New, Top, Popular)
 - [ ] TV show support
 - [ ] AI-enhanced recommendations
@@ -222,5 +222,5 @@ Open [http://localhost:5173](http://localhost:5173)
 | Frontend UI              | Complete    |
 | Authentication           | Complete    |
 | Recommendations          | Complete    |
+| Trailers                 | Complete    |
 | Advanced recommendations | In Progress |
-| Trailers                 | In Progress |
