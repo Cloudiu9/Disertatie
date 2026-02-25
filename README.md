@@ -25,7 +25,7 @@ Core goals:
 
 ```
 project/
-├── backend/          # Flask REST API + MongoDB + recommendation scripts
+├── backend/          # Flask REST API + MongoDB Atlas + recommendation scripts
 │   ├── scripts/
 │   │   └── build_content_recommender.py
 │   ├── seed_movies.py
@@ -35,7 +35,7 @@ project/
 ```
 
 **Frontend:** React · TypeScript · TailwindCSS · Vite  
-**Backend:** Flask · MongoDB · Python (NumPy, Pandas, scikit-learn)
+**Backend:** Flask · MongoDB Atlas · Python (NumPy, Pandas, scikit-learn)
 
 ---
 
@@ -206,7 +206,7 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## 9. Planned Features
 
-- [ ] Trailer popup player
+- [x] Trailer popup player
 - [ ] Separate browse routes (New, Top, Popular)
 - [ ] TV show support
 - [ ] AI-enhanced recommendations
@@ -222,5 +222,5 @@ Open [http://localhost:5173](http://localhost:5173)
 | Frontend UI              | Complete    |
 | Authentication           | Complete    |
 | Recommendations          | Complete    |
+| Trailers                 | Complete    |
 | Advanced recommendations | In Progress |
-| Trailers                 | In Progress |
