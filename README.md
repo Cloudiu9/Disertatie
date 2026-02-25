@@ -25,7 +25,7 @@ Core goals:
 
 ```
 project/
-├── backend/          # Flask REST API + MongoDB + recommendation scripts
+├── backend/          # Flask REST API + MongoDB Atlas + recommendation scripts
 │   ├── scripts/
 │   │   └── build_content_recommender.py
 │   ├── seed_movies.py
@@ -35,7 +35,7 @@ project/
 ```
 
 **Frontend:** React · TypeScript · TailwindCSS · Vite  
-**Backend:** Flask · MongoDB · Python (NumPy, Pandas, scikit-learn)
+**Backend:** Flask · MongoDB Atlas · Python (NumPy, Pandas, scikit-learn)
 
 ---
 
