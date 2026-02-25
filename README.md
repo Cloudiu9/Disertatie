@@ -84,7 +84,7 @@ project/
 ### 4.1 Clone the Repository
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Cloudiu9/Disertatie.git
 cd project
 ```
 
