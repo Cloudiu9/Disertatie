@@ -4,12 +4,13 @@ import type { Movie } from "../types/Movie";
 type Props = {
   movie: Movie;
   didDrag: React.MutableRefObject<boolean>;
-  small?: boolean;
+  variant?: "default" | "compact" | "recommendation";
+  onRemove?: (tmdb_id: number) => void;
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
-function MovieCard({ movie, didDrag, small }: Props) {
+function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
   const navigate = useNavigate();
 
   const handleClick = (e: React.MouseEvent) => {
@@ -21,25 +22,68 @@ function MovieCard({ movie, didDrag, small }: Props) {
     navigate(`/movies/${movie.tmdb_id}`);
   };
 
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRemove?.(movie.tmdb_id);
+  };
+
   const posterUrl = movie.poster_path
     ? `${IMAGE_BASE_URL}${movie.poster_path}`
     : "/placeholder-poster.png";
+
+  const sizeClasses = {
+    default:
+      "h-[200px] w-[130px] sm:h-[225px] sm:w-[150px] lg:h-[315px] lg:w-[230px]",
+
+    compact: "h-[200px] w-[130px] lg:h-[240px] lg:w-[160px]",
+
+    recommendation:
+      // Mobile = compact
+      // Desktop = full recommendation
+      "h-[195px] w-[130px] lg:h-[300px] lg:w-[200px]",
+  };
+
+  const containerWidth =
+    variant === "recommendation"
+      ? "min-w-[130px] lg:min-w-[195px]"
+      : variant === "compact"
+        ? "min-w-[130px] lg:min-w-[160px]"
+        : "min-w-[130px] sm:min-w-[150px] lg:min-w-[230px]";
 
   return (
     <div
       onClick={handleClick}
       draggable={false}
-      className={`${small ? "min-w-[110px]" : "min-w-[230px]"} cursor-pointer select-none`}
+      className={`relative cursor-pointer select-none ${containerWidth}`}
     >
+      {/* Remove button */}
+      {onRemove && (
+        <button
+          onClick={handleRemove}
+          className="
+            absolute top-2 right-2
+            bg-black/70 hover:bg-black
+            text-white
+            rounded-full
+            w-7 h-7
+            text-sm
+            flex items-center justify-center
+            z-10
+          "
+        >
+          ×
+        </button>
+      )}
+
       <img
         src={posterUrl}
         alt={movie.title}
         draggable={false}
-        className={`${
-          small
-            ? "h-[315px] w-[230px] min-h-[160px] min-w-[110px]"
-            : "h-[315px] w-[230px] min-h-[315px] min-w-[230px]"
-        } rounded-md object-cover transition-transform duration-300 hover:scale-105`}
+        className={`
+          rounded-md object-cover
+          transition-transform duration-300 hover:scale-105
+          ${sizeClasses[variant]}
+        `}
       />
     </div>
   );

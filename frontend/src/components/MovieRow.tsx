@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Movie } from "../types/Movie";
 import { fetchMovies } from "../api/movies";
 import MovieCard from "./MovieCard";
@@ -7,65 +7,109 @@ import { useDragScroll } from "../hooks/useDragScroll";
 type Props = {
   title: string;
   sort?: string;
+  genre?: string;
   movies?: Movie[];
   disableFetch?: boolean;
-  small?: boolean;
+  variant?: "default" | "compact" | "recommendation";
+  onRemove?: (tmdb_id: number) => void;
 };
 
 function MovieRow({
   title,
   sort,
+  genre,
   movies: injectedMovies,
   disableFetch,
-  small,
+  variant,
+  onRemove,
 }: Props) {
-  const [movies, setMovies] = useState<Movie[]>(injectedMovies ?? []);
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(!injectedMovies);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   const drag = useDragScroll();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (disableFetch) return;
 
     setLoading(true);
+    setPage(1);
 
-    fetchMovies(1, 20, sort).then((data) => {
+    fetchMovies(1, 20, sort, genre).then((data) => {
       setMovies(data.results);
+      setHasMore(data.results.length === 20);
       setLoading(false);
     });
-  }, [sort, disableFetch]);
+  }, [sort, genre, disableFetch]);
 
-  function MovieSkeleton() {
-    return (
-      <div
-        className={`${small ? "h-[160px] w-[110px]" : "h-[225px] w-[150px]"} rounded bg-gray-800 animate-pulse`}
-      />
+  // Infinite scroll trigger
+  useEffect(() => {
+    if (!hasMore || disableFetch) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading) {
+          const nextPage = page + 1;
+          setLoading(true);
+
+          fetchMovies(nextPage, 20, sort, genre).then((data) => {
+            setMovies((prev) => [...prev, ...data.results]);
+            setHasMore(data.results.length === 20);
+            setPage(nextPage);
+            setLoading(false);
+          });
+        }
+      },
+      {
+        root: drag.ref.current,
+        threshold: 0.5,
+      },
     );
-  }
+
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [page, hasMore, loading, sort, genre, disableFetch]);
+
+  // Syncing for instant removal from MyList
+  useEffect(() => {
+    if (injectedMovies) {
+      setMovies(injectedMovies);
+    }
+  }, [injectedMovies]);
 
   return (
     <section className="space-y-4">
-      <h2 className="px-6 text-lg font-semibold text-white">{title}</h2>
+      <h2 className="px-6 text-base sm:text-lg font-semibold text-white">
+        {title}
+      </h2>
+
       <div
         ref={drag.ref}
         {...drag.handlers}
         className="
-          flex gap-4 px-6
+          flex gap-3 sm:gap-4 px-4 sm:px-6
           overflow-x-auto overflow-y-hidden
           scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent
           cursor-grab active:cursor-grabbing
         "
       >
-        {loading
-          ? Array.from({ length: 10 }).map((_, i) => <MovieSkeleton key={i} />)
-          : movies.map((movie) => (
-              <MovieCard
-                key={movie.tmdb_id}
-                movie={movie}
-                didDrag={drag.didDrag}
-                small={small}
-              />
-            ))}
+        {movies.map((movie) => (
+          <MovieCard
+            key={movie.tmdb_id}
+            movie={movie}
+            didDrag={drag.didDrag}
+            variant={variant}
+            onRemove={onRemove}
+          />
+        ))}
+
+        {/* Sentinel for infinite scroll */}
+        {hasMore && <div ref={sentinelRef} className="w-10" />}
       </div>
     </section>
   );

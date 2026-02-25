@@ -1,4 +1,4 @@
-- Exclude unwanted movies (probably can't be done? unless manually)
+- Exclude unwanted movies (has to be done manually)
 
 LIST TO EXCLUDE:
 Shameless,
@@ -25,9 +25,12 @@ Play Time,
 High Art,
 Emmanuelle
 
+REMOVE:
+Hot Girls Wanted
+
 - Make a real README.md with all the steps of functionality (ex: make env files in backend/frontend, run seed_movies.py, build_content_recommender, etc.)/project description
     Setup:
-    - Install the dependencies: "requirements.txt from backend / package.json from frontend
+    - Install the dependencies: "pip install -r requirements.txt" from backend + other unlisted dependencies / "npm install package.json" from frontend 
     - Make a .env file in the backend directory with your MONGO_URI and TMDB_KEY
     - Make a .env.local with a VITE_API_BASE=http://localhost:5000
     - Run "python seed_movies.py" from backend
@@ -79,7 +82,20 @@ WORKING ON: User-based recommendations
 
 --DONE-- Make Search results be right clickable/middle clickable so they can be opened in a new tab
 
-TODO Improve the Hero Section, make it scrollable with ~5 movies, dynamic/different on reload
-TODO Add the separate routes from the navbar (TV Series, etc.)
+--DONE-- Improve the Hero Section, make it scrollable with ~5 movies, dynamic/different on reload
+--DONE-- Improve the "Score" rating for a movie (ex: only limit to 2 digits: 7.5, 6.2; color it differently for each range: 1-4 red (bad), 5-7 orange(okay), 8-10 good (green))
+--DONE-- Add sorting/
+      filtering/
+      genres/
+--DONE--? better pagination to the main page
+
+--DONE-- Improve feel of responsive design on smaller screens. (genres list vertically, smaller movie cards, smaller text on details page)
+
+--DONE-- Add option to remove movie directly from My List
+
+TODO Make the movie trailer show up when the user clicks "Play" (separate popup window vs full screen?)
+
+TODO Add the separate routes from the navbar (New, etc.)
+        -- TODO Add TV Shows ?
 
 TODO AI Recommendations + Chatbot(?)

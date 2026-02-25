@@ -8,6 +8,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import type { Movie } from "../types/Movie";
 import { fetchMovies } from "../api/movies";
+import MovieMeta from "./MovieMeta";
 
 function shuffleArray<T>(array: T[]): T[] {
   return [...array].sort(() => Math.random() - 0.5);
@@ -102,16 +103,13 @@ function HeroBanner() {
               </h1>
 
               <div
-                className={`mt-4 flex items-center gap-4 text-sm text-gray-300 transition-all duration-700 delay-150 ${
+                className={`mt-4 transition-all duration-700 delay-150 ${
                   isActive
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-6"
                 }`}
               >
-                <span>{movie.year}</span>
-                <span className="font-semibold text-green-400">
-                  ⭐ {movie.rating}
-                </span>
+                <MovieMeta year={movie.year} rating={movie.rating} large />
               </div>
 
               <p

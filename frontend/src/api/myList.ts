@@ -1,4 +1,3 @@
-// myList.ts
 import type { Movie } from "../types/Movie";
 
 export async function fetchMyList(): Promise<Movie[]> {
