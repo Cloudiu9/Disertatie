@@ -7,6 +7,7 @@ load_dotenv()
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client["movie_platform"]
 
+tv_collection = db["tv_shows"]
 movies_collection = db["movies"]
 users_collection = db["users"]
 users_collection.create_index("my_list")

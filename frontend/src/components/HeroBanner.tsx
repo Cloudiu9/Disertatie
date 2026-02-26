@@ -7,7 +7,9 @@ import {
 } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
 import type { Movie } from "../types/Movie";
+import type { TVShow } from "../types/TVShow";
 import { fetchMovies } from "../api/movies";
+import { fetchTV } from "../api/tv";
 import MovieMeta from "./MovieMeta";
 import TrailerModal from "./TrailerModal";
 import { fetchTrailer } from "../api/trailer";
@@ -17,8 +19,13 @@ function shuffleArray<T>(array: T[]): T[] {
   return [...array].sort(() => Math.random() - 0.5);
 }
 
-function HeroBanner() {
-  const [heroMovies, setHeroMovies] = useState<Movie[]>([]);
+type HeroBannerProps = {
+  mediaType?: "movie" | "tv";
+};
+
+function HeroBanner({ mediaType = "movie" }: HeroBannerProps) {
+  type HeroItem = (Movie | TVShow) & { mediaType: "movie" | "tv" };
+  const [heroMovies, setHeroMovies] = useState<HeroItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
@@ -34,12 +41,15 @@ function HeroBanner() {
 
   useEffect(() => {
     async function loadHero() {
-      const data = await fetchMovies(1, 20, "popularity");
-      const shuffled = shuffleArray(data.results);
-      setHeroMovies(shuffled.slice(0, 5));
+      const data =
+        mediaType === "tv"
+          ? await fetchTV(1, 20, "popularity")
+          : await fetchMovies(1, 20, "popularity");
+      const tagged = data.results.map((m): HeroItem => ({ ...m, mediaType }));
+      setHeroMovies(shuffleArray(tagged).slice(0, 5));
     }
     loadHero();
-  }, []);
+  }, [mediaType]);
 
   useEffect(() => {
     if (heroMovies.length === 0) return;
@@ -147,7 +157,13 @@ function HeroBanner() {
                   {loadingTrailer ? "Loading" : "Play"}
                 </button>
                 <button
-                  onClick={() => navigate(`/movies/${movie.tmdb_id}`)}
+                  onClick={() =>
+                    navigate(
+                      movie.mediaType === "tv"
+                        ? `/tv/${movie.tmdb_id}`
+                        : `/movies/${movie.tmdb_id}`,
+                    )
+                  }
                   className="flex items-center gap-2 rounded bg-gray-500/70 px-6 py-2 font-semibold hover:bg-gray-500/50 transition cursor-pointer"
                 >
                   <InformationCircleIcon className="h-5 w-5" />

@@ -93,9 +93,13 @@ WORKING ON: User-based recommendations
 
 --DONE-- Add option to remove movie directly from My List
 
-TODO Make the movie trailer show up when the user clicks "Play" (separate popup window vs full screen?)
+--DONE-- Make the movie trailer show up when the user clicks "Play" (separate popup window vs full screen?)
 
 TODO Add the separate routes from the navbar (New, etc.)
-        -- TODO Add TV Shows ?
+        --DONE-- Add TV Shows 
+          - Fix Trailer API getting /api/movies/549/trailer HTTP/1.1" 200  instead of the TV Show route
+          - Add TV Details page
+          - Remove unwanted TV series (needs a reseed)
+          - Test/implement recommendations for TV Series (mix/separate?)
 
 TODO AI Recommendations + Chatbot(?)

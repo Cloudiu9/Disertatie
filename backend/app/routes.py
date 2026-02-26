@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.db import movies_collection
+from app.db import movies_collection, tv_collection
 import os
 import requests
 from dotenv import load_dotenv
@@ -154,4 +154,152 @@ def search_movies():
 def get_genres():
     genres = movies_collection.distinct("genres")
     genres = sorted(genres)
+    return jsonify(genres)
+
+# TV Shows
+
+# TV List
+@bp.route("/api/tv", methods=["GET"])
+def get_tv():
+
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 10))
+
+    skip = (page - 1) * limit
+
+    sort_param = request.args.get("sort", "rating")
+    genre_param = request.args.get("genre")
+
+    SORT_FIELDS = {
+        "rating": "rating",
+        "popularity": "popularity",
+        "year": "year"
+    }
+
+    sort_field = SORT_FIELDS.get(sort_param, "rating")
+
+    filter_query = {}
+
+    if sort_field == "rating":
+        filter_query["votes"] = {"$gt": 500}
+
+    if genre_param:
+        filter_query["genres"] = genre_param
+
+    cursor = (
+        tv_collection
+        .find(filter_query, {"_id": 0})
+        .sort([
+            (sort_field,-1),
+            ("tmdb_id",1)
+        ])
+        .skip(skip)
+        .limit(limit)
+    )
+
+    results=list(cursor)
+
+    total=tv_collection.count_documents(filter_query)
+
+    return jsonify({
+        "page":page,
+        "limit":limit,
+        "total":total,
+        "results":results
+    })
+
+# Single TV Show
+@bp.route("/api/tv/<int:tmdb_id>", methods=["GET"])
+def get_tv_show(tmdb_id):
+    tv=tv_collection.find_one(
+        {"tmdb_id":tmdb_id},
+        {"_id":0}
+    )
+
+    if not tv:
+
+        return jsonify({"error":"Not found"}),404
+
+    return jsonify(tv)
+
+# TV Trailer
+@bp.route("/api/tv/<int:tmdb_id>/trailer", methods=["GET"])
+def get_tv_trailer(tmdb_id):
+
+    url=f"https://api.themoviedb.org/3/tv/{tmdb_id}/videos"
+
+    res=requests.get(
+        url,
+        params={
+            "api_key":TMDB_KEY,
+            "language":"en-US"
+        }
+    )
+
+    if not res.ok:
+
+        return jsonify({"error":"TMDB"}),500
+
+    data=res.json()["results"]
+
+    trailer=None
+
+    for v in data:
+        if(
+            v["site"]=="YouTube"
+            and v["type"]=="Trailer"
+            and v.get("official")
+        ):
+            trailer=v
+            break
+
+
+    if not trailer:
+        for v in data:
+            if(
+                v["site"]=="YouTube"
+                and v["type"]=="Trailer"
+            ):
+                trailer=v
+                break
+
+    if not trailer:
+        for v in data:
+            if v["site"]=="YouTube":
+                trailer=v
+                break
+
+
+    if not trailer:
+        return jsonify({"key":None})
+
+    return jsonify({
+        "key":trailer["key"]
+    })
+
+# TV Search
+@bp.route("/api/tv/search", methods=["GET"])
+def search_tv():
+
+    query=request.args.get("q","").strip()
+    if not query:
+        return jsonify([])
+    tv=list(
+        tv_collection.find(
+            {
+                "title":{
+                    "$regex":query,
+                    "$options":"i"
+                }
+            },
+            {"_id":0}
+        ).limit(20)
+    )
+    return jsonify(tv)
+
+# TV Genres
+@bp.route("/api/tv/genres", methods=["GET"])
+def get_tv_genres():
+    genres=tv_collection.distinct("genres")
+    genres=sorted(genres)
     return jsonify(genres)

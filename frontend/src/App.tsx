@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import { AuthProvider } from "./context/AuthContext";
 import ProfilePage from "./pages/ProfilePage";
+import TVPage from "./pages/TVPage";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MoviesPage />} />
           <Route path="/movies/:id" element={<MovieDetailsPage />} />
+          <Route path="/tv" element={<TVPage />} />
           <Route path="/my-list" element={<MyListPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

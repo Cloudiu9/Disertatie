@@ -1,5 +1,8 @@
-export async function fetchTrailer(tmdb_id: number) {
-  const res = await fetch(`/api/movies/${tmdb_id}/trailer`);
+export async function fetchTrailer(
+  tmdb_id: number,
+  type: "movies" | "tv" = "movies",
+) {
+  const res = await fetch(`/api/${type}/${tmdb_id}/trailer`);
 
   if (!res.ok) {
     throw new Error("Trailer fetch failed");

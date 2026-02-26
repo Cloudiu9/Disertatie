@@ -5,16 +5,21 @@ import debounce from "lodash.debounce";
 import type { Movie } from "../types/Movie";
 import { useAuth } from "../context/AuthContext";
 
+type SearchItem = Movie & {
+  media_type?: "movie" | "tv";
+};
+
 const navItems = [
   { label: "Browse", href: "/" },
   { label: "Movies", href: "/movies" },
+  { label: "TV Shows", href: "/tv" },
   { label: "New & Popular", href: "/new" },
   { label: "My List", href: "/my-list" },
 ];
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Movie[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -24,34 +29,27 @@ export default function Header() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
-  /* outside click handling for search  */
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node))
         setSearchOpen(false);
-      }
     };
-
     document.addEventListener("mousedown", handleMouseDown);
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  /*  outside click handling for dropdown */
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(e.target as Node)
-      ) {
+      )
         setOpen(false);
-      }
     };
-
     document.addEventListener("mousedown", handleMouseDown);
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, []);
 
-  /* debounced backend search */
   const doSearch = debounce(async (q: string) => {
     if (!q) {
       setSearchResults([]);
@@ -62,11 +60,20 @@ export default function Header() {
     setSearchLoading(true);
 
     try {
-      const res = await fetch(
-        `http://127.0.0.1:5000/api/movies/search?q=${encodeURIComponent(q)}`,
+      const [moviesRes, tvRes] = await Promise.all([
+        fetch(`/api/movies/search?q=${encodeURIComponent(q)}`),
+        fetch(`/api/tv/search?q=${encodeURIComponent(q)}`),
+      ]);
+
+      const movies: SearchItem[] = await moviesRes.json();
+      const tv: SearchItem[] = await tvRes.json();
+
+      const taggedMovies = movies.map(
+        (m): SearchItem => ({ ...m, media_type: "movie" }),
       );
-      const data: Movie[] = await res.json();
-      setSearchResults(data);
+      const taggedTV = tv.map((t): SearchItem => ({ ...t, media_type: "tv" }));
+
+      setSearchResults([...taggedMovies, ...taggedTV]);
     } catch {
       setSearchResults([]);
     } finally {
@@ -83,7 +90,6 @@ export default function Header() {
   return (
     <header className="fixed top-0 z-50 w-full bg-[#141414] shadow-md">
       <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-6">
-        {/* LEFT */}
         <div className="flex items-center gap-10">
           <Link to="/" className="text-2xl font-black text-red-600">
             MOVIEFLIX
@@ -104,9 +110,7 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* RIGHT */}
         <div className="flex items-center gap-6 text-gray-300">
-          {/* SEARCH */}
           <div ref={searchRef} className="relative">
             <div
               className="flex items-center gap-2"
@@ -122,7 +126,7 @@ export default function Header() {
                   autoFocus
                   value={searchQuery}
                   onChange={onChange}
-                  placeholder="Search movies..."
+                  placeholder="Search movies or TV..."
                   className="w-48 rounded bg-black px-3 py-1 text-sm text-white placeholder-gray-400 outline-none"
                 />
               )}
@@ -143,41 +147,51 @@ export default function Header() {
                   )}
 
                 {!searchLoading &&
-                  searchResults.map((movie) => (
-                    <Link
-                      key={movie.tmdb_id}
-                      to={`/movies/${movie.tmdb_id}`}
-                      onClick={() => {
-                        setSearchOpen(false);
-                        setSearchQuery("");
-                        setSearchResults([]);
-                      }}
-                      className="flex items-center gap-3 border-b border-gray-800 p-3 hover:bg-gray-800 focus:bg-gray-800"
-                    >
-                      <img
-                        src={
-                          movie.poster_path
-                            ? `https://image.tmdb.org/t/p/w200${movie.poster_path}`
-                            : "https://via.placeholder.com/80x120?text=No+Image"
-                        }
-                        alt={movie.title}
-                        className="h-16 w-12 rounded object-cover"
-                      />
-                      <div>
-                        <div className="text-sm font-semibold text-white">
-                          {movie.title}
+                  searchResults.map((item) => {
+                    const url =
+                      item.media_type === "tv"
+                        ? `/tv/${item.tmdb_id}`
+                        : `/movies/${item.tmdb_id}`;
+
+                    return (
+                      <Link
+                        key={`${item.media_type}-${item.tmdb_id}`}
+                        to={url}
+                        onClick={() => {
+                          setSearchOpen(false);
+                          setSearchQuery("");
+                          setSearchResults([]);
+                        }}
+                        className="flex items-center gap-3 border-b border-gray-800 p-3 hover:bg-gray-800"
+                      >
+                        <img
+                          src={
+                            item.poster_path
+                              ? `https://image.tmdb.org/t/p/w200${item.poster_path}`
+                              : "https://via.placeholder.com/80x120"
+                          }
+                          alt={item.title}
+                          className="h-16 w-12 rounded object-cover"
+                        />
+
+                        <div>
+                          <div className="text-sm font-semibold text-white">
+                            {item.title}
+                          </div>
+
+                          <div className="text-xs text-gray-400">
+                            {item.year ?? ""}
+                            {" • "}
+                            {item.media_type === "tv" ? "TV" : "Movie"}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-400">
-                          {movie.year ?? ""}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
               </div>
             )}
           </div>
 
-          {/* USER DROPDOWN */}
           <div className="relative" ref={dropdownRef}>
             {user ? (
               <>
