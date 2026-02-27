@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Movie } from "../types/Movie";
-
 import { fetchMovies } from "../api/movies";
 import { fetchTV } from "../api/tv";
-
 import MovieCard from "./MovieCard";
 import { useDragScroll } from "../hooks/useDragScroll";
 
@@ -32,6 +30,7 @@ function MovieRow({
   const [loading, setLoading] = useState(!injectedMovies);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
   const drag = useDragScroll();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -48,6 +47,7 @@ function MovieRow({
 
     setLoading(true);
     setPage(1);
+
     fetchPage(1).then((data) => {
       setMovies(data.results);
       setHasMore(data.results.length === 20);
@@ -55,7 +55,6 @@ function MovieRow({
     });
   }, [sort, genre, disableFetch, mediaType]);
 
-  // Infinite scroll
   useEffect(() => {
     if (!hasMore || disableFetch) return;
 
@@ -76,7 +75,6 @@ function MovieRow({
       },
       {
         root: drag.ref.current,
-
         threshold: 0.5,
       },
     );
@@ -88,7 +86,6 @@ function MovieRow({
     return () => observer.disconnect();
   }, [page, hasMore, loading, sort, genre, disableFetch, mediaType]);
 
-  // Injected movies sync
   useEffect(() => {
     if (injectedMovies) {
       setMovies(injectedMovies);
@@ -115,6 +112,7 @@ function MovieRow({
           <MovieCard
             key={movie.tmdb_id}
             movie={movie}
+            mediaType={mediaType}
             didDrag={drag.didDrag}
             variant={variant}
             onRemove={onRemove}

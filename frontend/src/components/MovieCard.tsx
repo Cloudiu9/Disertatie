@@ -6,11 +6,18 @@ type Props = {
   didDrag: React.MutableRefObject<boolean>;
   variant?: "default" | "compact" | "recommendation";
   onRemove?: (tmdb_id: number) => void;
+  mediaType: "movie" | "tv";
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
-function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
+function MovieCard({
+  movie,
+  didDrag,
+  variant = "default",
+  onRemove,
+  mediaType,
+}: Props) {
   const navigate = useNavigate();
 
   const handleClick = (e: React.MouseEvent) => {
@@ -19,7 +26,11 @@ function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
       e.stopPropagation();
       return;
     }
-    navigate(`/movies/${movie.tmdb_id}`);
+
+    const path =
+      mediaType === "tv" ? `/tv/${movie.tmdb_id}` : `/movies/${movie.tmdb_id}`;
+
+    navigate(path);
   };
 
   const handleRemove = (e: React.MouseEvent) => {
@@ -37,10 +48,7 @@ function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
 
     compact: "h-[200px] w-[130px] lg:h-[240px] lg:w-[160px]",
 
-    recommendation:
-      // Mobile = compact
-      // Desktop = full recommendation
-      "h-[195px] w-[130px] lg:h-[300px] lg:w-[200px]",
+    recommendation: "h-[195px] w-[130px] lg:h-[300px] lg:w-[200px]",
   };
 
   const containerWidth =
@@ -56,7 +64,6 @@ function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
       draggable={false}
       className={`relative cursor-pointer select-none ${containerWidth}`}
     >
-      {/* Remove button */}
       {onRemove && (
         <button
           onClick={handleRemove}

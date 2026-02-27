@@ -69,25 +69,35 @@ function HeroBanner({ mediaType = "movie" }: HeroBannerProps) {
   // Prefetch trailer for current hero movie
   useEffect(() => {
     if (!currentMovie) return;
+
     setPrefetchedTrailer(null);
-    fetchTrailer(currentMovie.tmdb_id)
+
+    fetchTrailer(currentMovie.tmdb_id, currentMovie.mediaType)
       .then((d) => d.key && setPrefetchedTrailer(d.key))
       .catch(() => {});
   }, [currentMovie]);
 
   const playTrailer = async () => {
     if (!currentMovie) return;
+
     setLoadingTrailer(true);
+
     try {
       let key = prefetchedTrailer;
+
       if (!key) {
-        const data = await fetchTrailer(currentMovie.tmdb_id);
+        const data = await fetchTrailer(
+          currentMovie.tmdb_id,
+          currentMovie.mediaType,
+        );
         key = data.key;
       }
+
       if (!key) {
         toast.error("Trailer not available");
         return;
       }
+
       setTrailerKey(key);
       setTrailerOpen(true);
     } catch {

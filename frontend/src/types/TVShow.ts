@@ -1,5 +1,6 @@
 export type TVShow = {
   tmdb_id: number;
+  media_type?: "movie" | "tv";
   title: string;
   year: number | null;
   rating: number;
