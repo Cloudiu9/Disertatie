@@ -1,27 +1,38 @@
 import { useEffect, useState } from "react";
+
 import type { Movie } from "../types/Movie";
-import { fetchMyList } from "../api/myList";
+import type { TVShow } from "../types/TVShow";
+
 import MovieRow from "../components/MovieRow";
-import { removeFromMyList } from "../api/myList";
+
+import { fetchMyList, removeFromMyList } from "../api/myList";
+
 import { toast } from "react-hot-toast";
 
+type Item = Movie | TVShow;
+
 function MyListPage() {
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchMyList()
-      .then(setMovies)
+      .then(setItems)
       .finally(() => setLoading(false));
   }, []);
 
-  const handleRemove = async (tmdb_id: number) => {
+  const handleRemove = async (tmdb_id: number, mediaType: "movie" | "tv") => {
     try {
-      await removeFromMyList(tmdb_id);
+      await removeFromMyList(tmdb_id, mediaType);
 
-      setMovies((prev) => prev.filter((m) => m.tmdb_id !== tmdb_id));
+      setItems((prev) =>
+        prev.filter(
+          (i) => !(i.tmdb_id === tmdb_id && i.media_type === mediaType),
+        ),
+      );
 
-      toast.success("Removed from My List");
+      toast.success("Removed");
     } catch {
       toast.error("Remove failed");
     }
@@ -35,17 +46,13 @@ function MyListPage() {
     );
   }
 
-  if (movies.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-white mb-4">
             Your List is Empty
           </h1>
-          <p className="text-gray-400 text-lg mb-6">
-            Start by logging in and add movies to build your personalized
-            collection
-          </p>
         </div>
       </div>
     );
@@ -58,13 +65,13 @@ function MyListPage() {
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             My List
           </h1>
-          <p className="text-gray-400 text-lg">
-            {movies.length} {movies.length === 1 ? "movie" : "movies"}
-          </p>
+
+          <p className="text-gray-400 text-lg">{items.length} items</p>
         </div>
+
         <MovieRow
           title=""
-          movies={movies}
+          movies={items}
           disableFetch
           onRemove={handleRemove}
         />

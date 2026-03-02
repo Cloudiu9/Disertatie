@@ -13,7 +13,7 @@ type Props = {
   movies?: Movie[];
   disableFetch?: boolean;
   variant?: "default" | "compact" | "recommendation";
-  onRemove?: (tmdb_id: number) => void;
+  onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
 };
 
 function MovieRow({
@@ -112,7 +112,7 @@ function MovieRow({
           <MovieCard
             key={movie.tmdb_id}
             movie={movie}
-            mediaType={mediaType}
+            mediaType={movie.media_type ?? mediaType}
             didDrag={drag.didDrag}
             variant={variant}
             onRemove={onRemove}

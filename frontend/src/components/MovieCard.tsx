@@ -5,7 +5,7 @@ type Props = {
   movie: Movie;
   didDrag: React.MutableRefObject<boolean>;
   variant?: "default" | "compact" | "recommendation";
-  onRemove?: (tmdb_id: number) => void;
+  onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
   mediaType: "movie" | "tv";
 };
 
@@ -35,7 +35,7 @@ function MovieCard({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onRemove?.(movie.tmdb_id);
+    onRemove?.(movie.tmdb_id, mediaType);
   };
 
   const posterUrl = movie.poster_path

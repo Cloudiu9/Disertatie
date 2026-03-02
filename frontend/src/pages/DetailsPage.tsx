@@ -196,7 +196,7 @@ function DetailsPage({ mediaType }: Props) {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={playTrailer}
-                  className="bg-white text-black px-6 py-2 rounded font-semibold"
+                  className="bg-white text-black px-6 py-2 rounded font-semibold cursor-pointer"
                 >
                   {loadingTrailer ? "Loading" : "Play"}
                 </button>
@@ -211,13 +211,19 @@ function DetailsPage({ mediaType }: Props) {
 
                     try {
                       if (inMyList) {
-                        await removeFromMyList(item.tmdb_id);
+                        await removeFromMyList(
+                          item.tmdb_id,
+                          item.media_type ?? mediaType,
+                        );
 
                         setInMyList(false);
 
                         toast.success("Removed");
                       } else {
-                        await addToMyList(item.tmdb_id);
+                        await addToMyList(
+                          item.tmdb_id,
+                          item.media_type ?? mediaType,
+                        );
 
                         setInMyList(true);
 
@@ -227,7 +233,7 @@ function DetailsPage({ mediaType }: Props) {
                       toast.error("Action failed");
                     }
                   }}
-                  className="bg-white/20 px-5 py-2 rounded font-semibold"
+                  className="bg-white/20 px-5 py-2 rounded font-semibold cursor-pointer"
                 >
                   {inMyList ? "✓ In My List" : "+ My List"}
                 </button>
