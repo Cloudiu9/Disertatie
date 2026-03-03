@@ -10,8 +10,7 @@ type SearchItem = Movie & {
 };
 
 const navItems = [
-  { label: "Browse", href: "/" },
-  { label: "Movies", href: "/movies" },
+  { label: "Movies", href: "/" },
   { label: "TV Shows", href: "/tv" },
   { label: "New & Popular", href: "/new" },
   { label: "My List", href: "/my-list" },

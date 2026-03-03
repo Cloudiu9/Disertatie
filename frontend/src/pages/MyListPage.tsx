@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 import type { Movie } from "../types/Movie";
 import type { TVShow } from "../types/TVShow";
 
-import MovieRow from "../components/MovieRow";
-
 import { fetchMyList, removeFromMyList } from "../api/myList";
 
 import { toast } from "react-hot-toast";
+import MovieCard from "../components/MovieCard";
 
 type Item = Movie | TVShow;
 
@@ -72,23 +71,45 @@ function MyListPage() {
           <p className="text-gray-400 text-lg">{items.length} items</p>
         </div>
 
-        {movies.length > 0 && (
-          <MovieRow
-            title="Movies"
-            movies={movies}
-            disableFetch
-            onRemove={handleRemove}
-          />
-        )}
+        <div className="px-8 space-y-12">
+          {movies.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-semibold text-white mb-6">
+                Movies ({movies.length})
+              </h2>
 
-        {tvShows.length > 0 && (
-          <MovieRow
-            title="TV Shows"
-            movies={tvShows}
-            disableFetch
-            onRemove={handleRemove}
-          />
-        )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6 [&>*]:w-full [&_img]:w-full [&_img]:aspect-[2/3] [&_img]:h-auto">
+                {movies.map((item) => (
+                  <MovieCard
+                    key={`movie-${item.tmdb_id}`}
+                    movie={item}
+                    mediaType="movie"
+                    onRemove={handleRemove}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tvShows.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-semibold text-white mb-6">
+                TV Shows ({tvShows.length})
+              </h2>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6 [&>*]:w-full [&_img]:w-full [&_img]:aspect-[2/3] [&_img]:h-auto">
+                {tvShows.map((item) => (
+                  <MovieCard
+                    key={`tv-${item.tmdb_id}`}
+                    movie={item}
+                    mediaType="tv"
+                    onRemove={handleRemove}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

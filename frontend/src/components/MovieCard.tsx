@@ -3,7 +3,7 @@ import type { Movie } from "../types/Movie";
 
 type Props = {
   movie: Movie;
-  didDrag: React.MutableRefObject<boolean>;
+  didDrag?: React.MutableRefObject<boolean>;
   variant?: "default" | "compact" | "recommendation";
   onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
   mediaType: "movie" | "tv";
@@ -21,7 +21,7 @@ function MovieCard({
   const navigate = useNavigate();
 
   const handleClick = (e: React.MouseEvent) => {
-    if (didDrag.current) {
+    if (didDrag?.current) {
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -68,7 +68,7 @@ function MovieCard({
         <button
           onClick={handleRemove}
           className="
-            absolute top-2 right-2
+            absolute top-1 right-3
             bg-black/70 hover:bg-black
             text-white
             rounded-full
