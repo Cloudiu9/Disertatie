@@ -276,7 +276,10 @@ function DetailsPage({ mediaType }: Props) {
       )}
 
       <div className="max-w-screen-2xl mx-auto px-6 py-8">
-        <Link to="/" className="text-gray-400 hover:text-white">
+        <Link
+          to={mediaType === "tv" ? "/tv" : "/"}
+          className="text-gray-400 hover:text-white"
+        >
           ← Back
         </Link>
       </div>

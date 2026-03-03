@@ -16,6 +16,9 @@ function MyListPage() {
 
   const [loading, setLoading] = useState(true);
 
+  const movies = items.filter((i) => i.media_type === "movie");
+  const tvShows = items.filter((i) => i.media_type === "tv");
+
   useEffect(() => {
     fetchMyList()
       .then(setItems)
@@ -69,12 +72,23 @@ function MyListPage() {
           <p className="text-gray-400 text-lg">{items.length} items</p>
         </div>
 
-        <MovieRow
-          title=""
-          movies={items}
-          disableFetch
-          onRemove={handleRemove}
-        />
+        {movies.length > 0 && (
+          <MovieRow
+            title="Movies"
+            movies={movies}
+            disableFetch
+            onRemove={handleRemove}
+          />
+        )}
+
+        {tvShows.length > 0 && (
+          <MovieRow
+            title="TV Shows"
+            movies={tvShows}
+            disableFetch
+            onRemove={handleRemove}
+          />
+        )}
       </div>
     </div>
   );
