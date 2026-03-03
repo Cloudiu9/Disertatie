@@ -25,30 +25,27 @@ type Item = Movie | TVShow;
 
 function DetailsPage({ mediaType }: Props) {
   const { id } = useParams();
-
   const [item, setItem] = useState<Item | null>(null);
-
   const [loading, setLoading] = useState(true);
-
   const [recommendations, setRecommendations] = useState<Item[]>([]);
-
-  const [inMyList, setInMyList] = useState(false);
-
-  const { user } = useAuth();
-
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
-
   const [trailerOpen, setTrailerOpen] = useState(false);
-
   const [loadingTrailer, setLoadingTrailer] = useState(false);
-
   const [prefetchedTrailer, setPrefetchedTrailer] = useState<string | null>(
     null,
   );
+  const { user, myList, addLocal, removeLocal } = useAuth();
 
   const baseApi = mediaType === "tv" ? "/api/tv" : "/api/movies";
-
   const recApi = `/api/recommendations/${mediaType}`;
+
+  const inMyList =
+    !!item &&
+    myList.some(
+      (m) =>
+        m.tmdb_id === item.tmdb_id &&
+        m.media_type === (item.media_type ?? mediaType),
+    );
 
   // Load item
 
@@ -80,16 +77,25 @@ function DetailsPage({ mediaType }: Props) {
 
   // My list
 
-  useEffect(() => {
-    if (!item) return;
+  // useEffect(() => {
+  //   if (!item) return;
 
-    fetch("/api/my-list", { credentials: "include" })
-      .then((r) => r.json())
-      .then((list: Movie[]) => {
-        setInMyList(list.some((m) => m.tmdb_id === item.tmdb_id));
-      })
-      .catch(() => setInMyList(false));
-  }, [item]);
+  //   setCheckingList(true);
+
+  //   fetch("/api/my-list", { credentials: "include" })
+  //     .then((r) => r.json())
+  //     .then((list: Movie[]) => {
+  //       const exists = list.some(
+  //         (m) =>
+  //           m.tmdb_id === item.tmdb_id &&
+  //           m.media_type === (item.media_type ?? mediaType),
+  //       );
+
+  //       setInMyList(exists);
+  //     })
+  //     .catch(() => setInMyList(false))
+  //     .finally(() => setCheckingList(false));
+  // }, [item, mediaType]);
 
   // Trailer prefetch
 
@@ -209,28 +215,44 @@ function DetailsPage({ mediaType }: Props) {
                       return;
                     }
 
-                    try {
-                      if (inMyList) {
+                    if (inMyList) {
+                      removeLocal({
+                        tmdb_id: item.tmdb_id,
+                        media_type: item.media_type ?? mediaType,
+                      });
+
+                      try {
                         await removeFromMyList(
                           item.tmdb_id,
                           item.media_type ?? mediaType,
                         );
-
-                        setInMyList(false);
-
                         toast.success("Removed");
-                      } else {
+                      } catch {
+                        addLocal({
+                          tmdb_id: item.tmdb_id,
+                          media_type: item.media_type ?? mediaType,
+                        });
+                        toast.error("Action failed");
+                      }
+                    } else {
+                      addLocal({
+                        tmdb_id: item.tmdb_id,
+                        media_type: item.media_type ?? mediaType,
+                      });
+
+                      try {
                         await addToMyList(
                           item.tmdb_id,
                           item.media_type ?? mediaType,
                         );
-
-                        setInMyList(true);
-
                         toast.success("Added");
+                      } catch {
+                        removeLocal({
+                          tmdb_id: item.tmdb_id,
+                          media_type: item.media_type ?? mediaType,
+                        });
+                        toast.error("Action failed");
                       }
-                    } catch {
-                      toast.error("Action failed");
                     }
                   }}
                   className="bg-white/20 px-5 py-2 rounded font-semibold cursor-pointer"

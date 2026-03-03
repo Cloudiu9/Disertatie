@@ -99,8 +99,8 @@ TODO Add the separate routes from the navbar (New, etc.)
         --DONE-- Add TV Shows 
           - --DONE-- Fix Trailer API getting /api/movies/549/trailer HTTP/1.1" 200  instead of the TV Show route
           - --DONE-- Add TV Details page
-          - TODO Fix DetailsPage not updating instantly on page start if item is in My List/ adding and removing to MyList feels laggy (?minor issue/optimization)
-          - TODO ^^ page might be rerendering after a few secs (if load -> add, get confirmation toast of adding -> flickers from +My List to In My List back to +My List)
+          - --DONE-- Fix DetailsPage not updating instantly on page start if item is in My List/ adding and removing to MyList feels laggy (?minor issue/optimization)
+          - --DONE-- ^^ page might be rerendering after a few secs (if load -> add, get confirmation toast of adding -> flickers from +My List to In My List back to +My List)
           - TODO Improve My List look (separate Movies and TV Shows?)
           - TODO Clicking 'back' on a TV show's details should bring you to the TVPage, not the MoviesPage (MoviesPage was the only/main page before.)
           - TODO Remove unwanted TV series (needs a reseed)
