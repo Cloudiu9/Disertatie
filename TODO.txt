@@ -103,7 +103,8 @@ TODO Add the separate routes from the navbar (New, etc.)
           - --DONE-- ^^ page might be rerendering after a few secs (if load -> add, get confirmation toast of adding -> flickers from +My List to In My List back to +My List)
           - --DONE-- Clicking 'back' on a TV show's details should bring you to the TVPage, not the MoviesPage (MoviesPage was the only/main page before.)
           - --DONE-- Improve My List look (separate Movies and TV Shows?)
-          - TODO Add more items to the Hero section rotation (keep only 5 that rotate, but increase variety)
+          - --DONE-- Add more items to the Hero section rotation (keep only 5 that rotate, but increase variety), increase hero visibility
+          - TODO Add 'skeleton' loading to every(?) page
           - TODO Remove unwanted TV series (needs a reseed)
           - TODO Implement recommendations for TV Series (mix/separate?)
 

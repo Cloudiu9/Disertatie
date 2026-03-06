@@ -43,10 +43,10 @@ function HeroBanner({ mediaType = "movie" }: HeroBannerProps) {
     async function loadHero() {
       const data =
         mediaType === "tv"
-          ? await fetchTV(1, 20, "popularity")
-          : await fetchMovies(1, 20, "popularity");
+          ? await fetchTV(1, 45, "popularity")
+          : await fetchMovies(1, 45, "popularity");
       const tagged = data.results.map((m): HeroItem => ({ ...m, mediaType }));
-      setHeroMovies(shuffleArray(tagged).slice(0, 5));
+      setHeroMovies(shuffleArray(tagged).slice(0, 10));
     }
     loadHero();
   }, [mediaType]);
@@ -137,8 +137,8 @@ function HeroBanner({ mediaType = "movie" }: HeroBannerProps) {
               alt={movie.title}
               className={`absolute inset-0 h-full w-full object-cover transition-transform duration-[7000ms] ease-out ${isActive ? "scale-105" : "scale-100"}`}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
 
             <div className="relative z-20 flex h-full max-w-screen-2xl flex-col justify-center px-6 md:px-12">
               <h1
