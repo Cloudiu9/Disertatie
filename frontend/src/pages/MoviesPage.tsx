@@ -3,22 +3,36 @@ import { fetchGenres } from "../api/movies";
 import MovieRow from "../components/MovieRow";
 import Hero from "../components/HeroBanner";
 import UserRecommendationsRow from "../components/UserRecommendationsRow";
+import { SkeletonHero, SkeletonRow } from "../components/Skeletons";
 
 function MoviesPage() {
   const [genres, setGenres] = useState<string[]>([]);
+  const [loadingGenres, setLoadingGenres] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchGenres().then(setGenres);
+    fetchGenres()
+      .then(setGenres)
+      .finally(() => setLoadingGenres(false));
   }, []);
-
   return (
     <div className="space-y-12 pb-12">
-      <Hero />
-      <UserRecommendationsRow />
-      <MovieRow title="Popular Now" sort="popularity" />
-      <MovieRow title="Top Rated" sort="rating" />
-      <MovieRow title="Newest Releases" sort="year" />
+      {loadingGenres ? (
+        <>
+          <SkeletonHero />
+          <SkeletonRow />
+          <SkeletonRow />
+          <SkeletonRow />
+        </>
+      ) : (
+        <>
+          <Hero />
+          <UserRecommendationsRow />
+          <MovieRow title="Popular Now" sort="popularity" />
+          <MovieRow title="Top Rated" sort="rating" />
+          <MovieRow title="Newest Releases" sort="year" />
+        </>
+      )}
 
       {/* Genre Selector */}
       <section className="space-y-4 px-4 sm:px-6">

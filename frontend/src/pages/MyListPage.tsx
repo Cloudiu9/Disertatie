@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-
 import type { Movie } from "../types/Movie";
 import type { TVShow } from "../types/TVShow";
-
 import { fetchMyList, removeFromMyList } from "../api/myList";
-
 import { toast } from "react-hot-toast";
 import MovieCard from "../components/MovieCard";
+import { SkeletonGrid } from "../components/Skeletons";
 
 type Item = Movie | TVShow;
 
@@ -42,8 +40,10 @@ function MyListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-black pt-24 pb-12 px-8 space-y-12">
+        <div className="h-10 w-48 bg-gray-700 rounded animate-pulse" />
+        <SkeletonGrid />
+        <SkeletonGrid />
       </div>
     );
   }

@@ -1,27 +1,37 @@
 import { useEffect, useState } from "react";
-
 import MovieRow from "../components/MovieRow";
 import Hero from "../components/HeroBanner";
-
 import { fetchTVGenres } from "../api/tv";
+import { SkeletonHero, SkeletonRow } from "../components/Skeletons";
 
 function TVPage() {
   const [genres, setGenres] = useState<string[]>([]);
+  const [loadingGenres, setLoadingGenres] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTVGenres().then(setGenres);
+    fetchTVGenres()
+      .then(setGenres)
+      .finally(() => setLoadingGenres(false));
   }, []);
 
   return (
     <div className="space-y-12 pb-12">
-      <Hero mediaType="tv" />
-
-      <MovieRow title="Popular TV" sort="popularity" mediaType="tv" />
-
-      <MovieRow title="Top Rated TV" sort="rating" mediaType="tv" />
-
-      <MovieRow title="Newest TV" sort="year" mediaType="tv" />
+      {loadingGenres ? (
+        <>
+          <SkeletonHero />
+          <SkeletonRow />
+          <SkeletonRow />
+          <SkeletonRow />
+        </>
+      ) : (
+        <>
+          <Hero mediaType="tv" />
+          <MovieRow title="Popular TV" sort="popularity" mediaType="tv" />
+          <MovieRow title="Top Rated TV" sort="rating" mediaType="tv" />
+          <MovieRow title="Newest TV" sort="year" mediaType="tv" />
+        </>
+      )}
 
       <section className="space-y-4 px-4 sm:px-6">
         <h2 className="text-base sm:text-lg font-semibold text-white text-center sm:text-left">
