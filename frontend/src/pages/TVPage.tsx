@@ -3,6 +3,7 @@ import MovieRow from "../components/MovieRow";
 import Hero from "../components/HeroBanner";
 import { fetchTVGenres } from "../api/tv";
 import { SkeletonHero, SkeletonRow } from "../components/Skeletons";
+import UserTVRecommendationsRow from "../components/UserTVRecommendationsRow";
 
 function TVPage() {
   const [genres, setGenres] = useState<string[]>([]);
@@ -27,6 +28,7 @@ function TVPage() {
       ) : (
         <>
           <Hero mediaType="tv" />
+          <UserTVRecommendationsRow />
           <MovieRow title="Popular TV" sort="popularity" mediaType="tv" />
           <MovieRow title="Top Rated TV" sort="rating" mediaType="tv" />
           <MovieRow title="Newest TV" sort="year" mediaType="tv" />

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchGenres } from "../api/movies";
 import MovieRow from "../components/MovieRow";
 import Hero from "../components/HeroBanner";
-import UserRecommendationsRow from "../components/UserRecommendationsRow";
+import UserMovieRecommendationsRow from "../components/UserMovieRecommendationsRow";
 import { SkeletonHero, SkeletonRow } from "../components/Skeletons";
 
 function MoviesPage() {
@@ -27,7 +27,7 @@ function MoviesPage() {
       ) : (
         <>
           <Hero />
-          <UserRecommendationsRow />
+          <UserMovieRecommendationsRow />
           <MovieRow title="Popular Now" sort="popularity" />
           <MovieRow title="Top Rated" sort="rating" />
           <MovieRow title="Newest Releases" sort="year" />
