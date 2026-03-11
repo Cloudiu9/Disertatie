@@ -18,12 +18,19 @@ tfidf_matrix = joblib.load("./artifacts/tfidf_matrix.joblib")
 with open("./artifacts/tfidf_index_to_tmdb.json") as f:
     index_to_tmdb = json.load(f)
 
+tv_vectorizer = joblib.load("./artifacts/tv_vectorizer.joblib")
+tv_tfidf_matrix = joblib.load("./artifacts/tv_tfidf_matrix.joblib")
+
+with open("./artifacts/tv_index_to_tmdb.json") as f:
+    tv_index_to_tmdb = json.load(f)
+
 # ------------------------
 # DB
 # ------------------------
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client["movie_platform"]
 movies_collection = db["movies"]
+tv_collection = db["tv_shows"]
 
 # ------------------------
 # ROUTE
@@ -66,3 +73,39 @@ def recommend_for_movie(tmdb_id):
 
     return jsonify(movies)
 
+@bp.route("/api/recommendations/tv/<int:tmdb_id>")
+def recommend_for_tv(tmdb_id):
+
+    if tmdb_id not in tv_index_to_tmdb:
+        return jsonify([])
+
+    idx = tv_index_to_tmdb.index(tmdb_id)
+
+    similarities = cosine_similarity(
+        tv_tfidf_matrix[idx], tv_tfidf_matrix
+    ).flatten()
+
+    similarities[idx] = 0
+
+    top_indices = np.argsort(similarities)[-10:][::-1]
+
+    tmdb_with_scores = {
+        tv_index_to_tmdb[i]: float(similarities[i])
+        for i in top_indices
+    }
+
+    recommended_tmdb_ids = list(tmdb_with_scores.keys())
+
+    shows = list(
+        tv_collection.find(
+            {"tmdb_id": {"$in": recommended_tmdb_ids}},
+            {"_id": 0},
+        )
+    )
+
+    for show in shows:
+        show["similarity"] = round(tmdb_with_scores[show["tmdb_id"]], 3)
+
+    shows.sort(key=lambda m: m["similarity"], reverse=True)
+
+    return jsonify(shows)

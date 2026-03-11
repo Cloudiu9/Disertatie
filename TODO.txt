@@ -26,7 +26,11 @@ High Art,
 Emmanuelle
 
 REMOVE:
-Hot Girls Wanted
+Movies:
+  Hot Girls Wanted
+TV Shows:
+  Redo of Healer
+
 
 - Make a real README.md with all the steps of functionality (ex: make env files in backend/frontend, run seed_movies.py, build_content_recommender, etc.)/project description
     Setup:
@@ -105,8 +109,9 @@ TODO Add the separate routes from the navbar (New, etc.)
           - --DONE-- Improve My List look (separate Movies and TV Shows?)
           - --DONE-- Add more items to the Hero section rotation (keep only 5 that rotate, but increase variety), increase hero visibility
           - --DONE-- Add 'skeleton' loading to every(?) page
-          - TODO Remove unwanted TV series (needs a reseed)
-          - TODO Fix user recommendations for my list (probably breaks because of TV Shows?) 
           - TODO Implement recommendations for TV Series (mix/separate?).
+          - TODO Fix user recommendations for my list (probably breaks because of TV Shows?) 
+          - TODO Fix My List look breaking on smaller screens (cards work fine on full res / mobile res, but break in between)
+          - TODO Remove unwanted TV series (needs a reseed)
 
 TODO AI Recommendations + Chatbot(?)

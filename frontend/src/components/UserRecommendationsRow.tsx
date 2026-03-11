@@ -45,6 +45,7 @@ export default function UserRecommendationsRow() {
                 key={movie.tmdb_id}
                 movie={movie}
                 didDrag={drag.didDrag}
+                mediaType="movie"
               />
             ))}
       </div>
