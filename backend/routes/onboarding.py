@@ -71,8 +71,13 @@ def complete_onboarding():
     users_collection.update_one(
         {"_id": ObjectId(user_id)},
         {
-            "$set": {"onboarding_complete": True},
-            "$push": {"my_list": {"$each": items}}
+            "$set": {
+                "onboarding_complete": True,
+                "preferred_genres": data.get("genres", [])
+            },
+            "$push": {
+                "my_list": {"$each": items}
+            }
         }
     )
 

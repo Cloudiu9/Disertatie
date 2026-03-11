@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 type User = {
   _id: string;
   email: string;
+  onboarding_complete?: boolean;
+  preferred_genres?: string[];
   created_at?: string;
   last_login?: string | null;
 };
@@ -59,10 +61,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function refreshMe() {
     setLoading(true);
+
     const me = await authApi.getMe();
+
     setUser(me);
+
     setLoading(false);
+
+    if (
+      me &&
+      !me.onboarding_complete &&
+      window.location.pathname !== "/onboarding"
+    ) {
+      window.location.href = "/onboarding";
+    }
   }
+
   async function refreshMyList() {
     if (!user) {
       setMyList([]);

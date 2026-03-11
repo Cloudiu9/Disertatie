@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProfilePage from "./pages/ProfilePage";
 import TVPage from "./pages/TVPage";
 import DetailsPage from "./pages/DetailsPage";
+import OnboardingPage from "./pages/OnboardingPage";
 
 function App() {
   return (
@@ -37,6 +38,9 @@ function App() {
           />
           <Route path="/tv" element={<TVPage />} />
           <Route path="/tv/:id" element={<DetailsPage mediaType="tv" />} />
+
+          <Route path="/onboarding" element={<OnboardingPage />} />
+
           <Route path="/my-list" element={<MyListPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
