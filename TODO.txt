@@ -111,7 +111,8 @@ TODO Add the separate routes from the navbar (New, etc.)
           - --DONE-- Add 'skeleton' loading to every(?) page
           - --DONE-- Implement recommendations for TV Series (mix/separate?).
           - --DONE-- Fix user recommendations for my list (probably breaks because of TV Shows?) -> had to update DB manually in order to delete older entries (movies that were just saved by id, not by an Object {tmdb_id872585 media_type "movie"})
-          - TODO Add TV Show User Recommendations
+          - --DONE-- Add TV Show User Recommendations
+          - TODO Improve cold start fix (user onboarding on profile creation)
           - TODO Fix My List look breaking on smaller screens (cards work fine on full res / mobile res, but break in between)
           - TODO Remove unwanted TV series (needs a reseed)
 

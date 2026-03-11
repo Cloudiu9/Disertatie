@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, make_response
 from email_validator import validate_email, EmailNotValidError
 from app.auth.auth_utils import get_current_user_id
 from app.db import users_collection
+from bson import ObjectId
 
 bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -14,9 +15,11 @@ JWT_EXPIRES_DAYS = int(os.getenv("JWT_EXPIRES_DAYS", 7))
 
 IS_PROD = os.getenv("FLASK_ENV") == "production"
 
+
 # ------------------------
 # HELPERS
 # ------------------------
+
 def hash_password(password: str) -> bytes:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12))
 
@@ -41,16 +44,18 @@ def validate_password_rules(password: str) -> bool:
     if not any(c.isupper() for c in password):
         return False
     if len(set(password)) < len(password):
-        return True  # has unique chars
+        return True
     return True
 
 
 # ------------------------
 # ROUTES
 # ------------------------
+
 @bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json(force=True)
+
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
 
@@ -71,7 +76,14 @@ def register():
         users_collection.insert_one({
             "email": email,
             "password_hash": hash_password(password),
+
+            # personalization data
             "my_list": [],
+            "preferred_genres": [],
+
+            # onboarding state
+            "onboarding_complete": False,
+
             "created_at": datetime.utcnow(),
             "last_login": None,
         })
@@ -84,6 +96,7 @@ def register():
 @bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json(force=True)
+
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
 
@@ -91,6 +104,7 @@ def login():
         return jsonify({"error": "Email and password required"}), 400
 
     user = users_collection.find_one({"email": email})
+
     if not user:
         return jsonify({"error": "Invalid credentials"}), 401
 
@@ -105,6 +119,7 @@ def login():
     )
 
     response = make_response(jsonify({"email": email}))
+
     response.set_cookie(
         "access_token",
         token,
@@ -116,14 +131,17 @@ def login():
 
     return response
 
+
 @bp.route("/me", methods=["GET"])
 def me():
+
     user_id = get_current_user_id()
+
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
     user = users_collection.find_one(
-        {"_id": user_id},
+        {"_id": ObjectId(user_id)},
         {"password_hash": 0}
     )
 
@@ -143,6 +161,7 @@ def me():
 
 @bp.route("/logout", methods=["POST"])
 def logout():
+
     response = make_response(jsonify({"status": "logged_out"}))
 
     response.set_cookie(
