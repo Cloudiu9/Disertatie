@@ -8,6 +8,8 @@ type MediaItem = {
   name?: string;
 };
 
+type Interaction = "seen" | "like" | "love";
+
 const GENRES = [
   "Action",
   "Comedy",
@@ -19,6 +21,26 @@ const GENRES = [
   "Animation",
 ];
 
+function SkeletonGrid() {
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-5 mb-12">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div
+          key={i}
+          className="aspect-[2/3] rounded-lg bg-gray-800 animate-pulse"
+        />
+      ))}
+    </div>
+  );
+}
+
+function nextInteraction(current?: Interaction): Interaction | undefined {
+  if (!current) return "seen";
+  if (current === "seen") return "like";
+  if (current === "like") return "love";
+  return undefined;
+}
+
 export default function OnboardingPage() {
   const navigate = useNavigate();
 
@@ -26,50 +48,80 @@ export default function OnboardingPage() {
   const [movies, setMovies] = useState<MediaItem[]>([]);
   const [tvShows, setTvShows] = useState<MediaItem[]>([]);
 
-  const [selectedMovies, setSelectedMovies] = useState<number[]>([]);
-  const [selectedTV, setSelectedTV] = useState<number[]>([]);
+  const [moviesLoading, setMoviesLoading] = useState(false);
+  const [tvLoading, setTvLoading] = useState(false);
+
+  const [movieInteractions, setMovieInteractions] = useState<
+    Record<number, Interaction>
+  >({});
+
+  const [tvInteractions, setTvInteractions] = useState<
+    Record<number, Interaction>
+  >({});
 
   useEffect(() => {
     if (genres.length === 0) return;
 
     const query = genres.map((g) => `genres=${g}`).join("&");
 
+    setMoviesLoading(true);
+    setTvLoading(true);
+
     fetch(`/api/onboarding/movies?${query}`, { credentials: "include" })
       .then((res) => res.json())
-      .then(setMovies);
+      .then((data) => {
+        setMovies(data);
+        setMoviesLoading(false);
+      });
 
     fetch(`/api/onboarding/tv?${query}`, { credentials: "include" })
       .then((res) => res.json())
-      .then(setTvShows);
+      .then((data) => {
+        setTvShows(data);
+        setTvLoading(false);
+      });
   }, [genres]);
 
   function toggleMovie(id: number) {
-    setSelectedMovies((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setMovieInteractions((prev) => {
+      const next = nextInteraction(prev[id]);
+      const copy = { ...prev };
+
+      if (!next) delete copy[id];
+      else copy[id] = next;
+
+      return copy;
+    });
   }
 
   function toggleTV(id: number) {
-    setSelectedTV((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setTvInteractions((prev) => {
+      const next = nextInteraction(prev[id]);
+      const copy = { ...prev };
+
+      if (!next) delete copy[id];
+      else copy[id] = next;
+
+      return copy;
+    });
   }
 
   async function submit() {
-    if (selectedMovies.length < 3 || selectedTV.length < 3) {
-      alert("Select at least 3 movies and 3 TV shows");
+    if (
+      Object.keys(movieInteractions).length < 3 ||
+      Object.keys(tvInteractions).length < 3
+    ) {
+      alert("Interact with at least 3 movies and 3 TV shows");
       return;
     }
 
     await fetch("/api/onboarding/complete", {
       method: "POST",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        movies: selectedMovies,
-        tv: selectedTV,
+        movies: movieInteractions,
+        tv: tvInteractions,
         genres: genres,
       }),
     });
@@ -77,11 +129,69 @@ export default function OnboardingPage() {
     navigate("/");
   }
 
-  return (
-    <div className="max-w-screen-xl mx-auto px-6 py-8 text-white">
-      <h1 className="text-3xl font-bold mb-6">Choose Your Favorite Genres</h1>
+  function ringColor(interaction?: Interaction) {
+    if (interaction === "seen") return "ring-4 ring-blue-400";
+    if (interaction === "like") return "ring-4 ring-yellow-400";
+    if (interaction === "love") return "ring-4 ring-red-500";
+    return "";
+  }
 
-      <div className="flex gap-3 flex-wrap mb-10">
+  return (
+    <div className="max-w-screen-xl mx-auto px-6 py-10 text-white">
+      <h1 className="text-4xl font-bold mt-10 mb-2">What are you into?</h1>
+
+      <p className="text-gray-400 mb-8 text-sm leading-relaxed">
+        Pick some genres, then rate what you've watched. We'll use your taste to
+        build your recommendations.
+      </p>
+
+      <div className="flex flex-wrap gap-3 mb-10">
+        {[
+          {
+            color: "bg-blue-400",
+            label: "1 click",
+            desc: "Seen it",
+            myList: false,
+          },
+          {
+            color: "bg-yellow-400",
+            label: "2 clicks",
+            desc: "Like",
+            myList: true,
+          },
+          {
+            color: "bg-red-500",
+            label: "3 clicks",
+            desc: "Love",
+            myList: true,
+          },
+          {
+            color: "bg-gray-500",
+            label: "4th click",
+            desc: "Remove",
+            myList: false,
+          },
+        ].map(({ color, label, desc, myList }) => (
+          <div
+            key={label}
+            className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-400"
+          >
+            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${color}`} />
+            <span>
+              <span className="text-white font-medium">{label}</span>
+              {" — "}
+              {desc}
+              {myList && (
+                <span className="ml-1.5 text-xs text-gray-500">
+                  · added to My List
+                </span>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-3 flex-wrap mb-12">
         {GENRES.map((g) => (
           <button
             key={g}
@@ -90,8 +200,10 @@ export default function OnboardingPage() {
                 prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g],
               )
             }
-            className={`px-4 py-2 rounded ${
-              genres.includes(g) ? "bg-red-600" : "bg-gray-700"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+              genres.includes(g)
+                ? "bg-red-600"
+                : "bg-gray-700 hover:bg-gray-600"
             }`}
           >
             {g}
@@ -101,48 +213,54 @@ export default function OnboardingPage() {
 
       {genres.length > 0 && (
         <>
-          <h2 className="text-2xl font-semibold mb-4">
-            Pick at least 3 Movies
-          </h2>
+          <section className="mb-14">
+            <h2 className="text-2xl font-semibold mb-5">Rate Movies</h2>
+            {moviesLoading ? (
+              <SkeletonGrid />
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-5 mb-12">
+                {movies.map((m) => (
+                  <img
+                    key={m.tmdb_id}
+                    src={`https://image.tmdb.org/t/p/w342${m.poster_path}`}
+                    className={`cursor-pointer rounded-lg transition transform hover:scale-105 ${ringColor(
+                      movieInteractions[m.tmdb_id],
+                    )}`}
+                    onClick={() => toggleMovie(m.tmdb_id)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
 
-          <div className="grid grid-cols-6 gap-4 mb-10">
-            {movies.map((m) => (
-              <img
-                key={m.tmdb_id}
-                src={`https://image.tmdb.org/t/p/w300${m.poster_path}`}
-                className={`cursor-pointer rounded ${
-                  selectedMovies.includes(m.tmdb_id)
-                    ? "ring-4 ring-red-500"
-                    : ""
-                }`}
-                onClick={() => toggleMovie(m.tmdb_id)}
-              />
-            ))}
+          <section className="mb-14">
+            <h2 className="text-2xl font-semibold mb-5">Rate TV Shows</h2>
+            {tvLoading ? (
+              <SkeletonGrid />
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-5 mb-12">
+                {tvShows.map((t) => (
+                  <img
+                    key={t.tmdb_id}
+                    src={`https://image.tmdb.org/t/p/w342${t.poster_path}`}
+                    className={`cursor-pointer rounded-lg transition transform hover:scale-105 ${ringColor(
+                      tvInteractions[t.tmdb_id],
+                    )}`}
+                    onClick={() => toggleTV(t.tmdb_id)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <div className="flex justify-center">
+            <button
+              onClick={submit}
+              className="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-lg text-lg font-semibold transition"
+            >
+              Finish Setup
+            </button>
           </div>
-
-          <h2 className="text-2xl font-semibold mb-4">
-            Pick at least 3 TV Shows
-          </h2>
-
-          <div className="grid grid-cols-6 gap-4 mb-10">
-            {tvShows.map((t) => (
-              <img
-                key={t.tmdb_id}
-                src={`https://image.tmdb.org/t/p/w300${t.poster_path}`}
-                className={`cursor-pointer rounded ${
-                  selectedTV.includes(t.tmdb_id) ? "ring-4 ring-red-500" : ""
-                }`}
-                onClick={() => toggleTV(t.tmdb_id)}
-              />
-            ))}
-          </div>
-
-          <button
-            onClick={submit}
-            className="bg-red-600 px-6 py-3 rounded text-lg"
-          >
-            Finish Setup
-          </button>
         </>
       )}
     </div>

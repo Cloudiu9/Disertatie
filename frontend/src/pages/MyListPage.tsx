@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import type { Movie } from "../types/Movie";
 import type { TVShow } from "../types/TVShow";
+
 import { fetchMyList, removeFromMyList } from "../api/myList";
+
 import { toast } from "react-hot-toast";
+
 import MovieCard from "../components/MovieCard";
 import { SkeletonGrid } from "../components/Skeletons";
 
@@ -10,8 +15,9 @@ type Item = Movie | TVShow;
 
 function MyListPage() {
   const [items, setItems] = useState<Item[]>([]);
-
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   const movies = items.filter((i) => i.media_type === "movie");
   const tvShows = items.filter((i) => i.media_type === "tv");
@@ -50,25 +56,67 @@ function MyListPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-black flex items-center justify-center px-6">
+        <div className="text-center max-w-md">
           <h1 className="text-4xl font-bold text-white mb-4">
             Your List is Empty
           </h1>
+
+          <p className="text-gray-400 mb-8">
+            Add movies and TV shows to build your personal recommendations.
+          </p>
+
+          <button
+            onClick={() => navigate("/onboarding")}
+            className="bg-red-600 hover:bg-red-500 px-6 py-3 rounded-lg font-semibold text-white transition cursor-pointer"
+          >
+            Start Personalizing
+          </button>
         </div>
       </div>
     );
   }
 
+  async function resetPreferences() {
+    const confirmReset = confirm(
+      "Reset all preferences and restart onboarding?",
+    );
+
+    if (!confirmReset) return;
+
+    const res = await fetch("/api/reset-preferences", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      toast.error("Reset failed");
+      return;
+    }
+
+    toast.success("Preferences reset");
+
+    navigate("/onboarding");
+  }
+
   return (
     <div className="min-h-screen bg-black">
       <div className="pt-24 pb-12">
-        <div className="px-8 mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-            My List
-          </h1>
+        {/* Header section cu titlu și buton aliniate */}
+        <div className="px-8 mb-8 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+              My List
+            </h1>
+            <p className="text-gray-400 text-lg">{items.length} items</p>
+          </div>
 
-          <p className="text-gray-400 text-lg">{items.length} items</p>
+          <button
+            onClick={resetPreferences}
+            className="text-sm text-gray-400 hover:text-white underline pb-1 whitespace-nowrap"
+          >
+            Reset Preferences
+          </button>
         </div>
 
         <div className="px-8 space-y-12">

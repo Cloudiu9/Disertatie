@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from bson import ObjectId
 
-from app.db import users_collection, movies_collection, tv_collection
+from app.db import users_collection, movies_collection, tv_collection, interactions_collection
 from app.auth.auth_utils import get_current_user_id
 
 bp = Blueprint("my_list", __name__, url_prefix="/api")
@@ -150,3 +150,32 @@ def remove_from_my_list(tmdb_id, media_type):
     )
 
     return jsonify({"status": "removed"})
+
+@bp.route("/reset-preferences", methods=["POST"])
+def reset_preferences():
+
+    user_id = get_current_user_id()
+
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_object_id = ObjectId(user_id)
+
+    # remove interaction signals
+    interactions_collection.delete_many({
+        "user_id": user_object_id
+    })
+
+    # clear my_list
+    users_collection.update_one(
+        {"_id": user_object_id},
+        {
+            "$set": {
+                "my_list": [],
+                "preferred_genres": [],
+                "onboarding_complete": False
+            }
+        }
+    )
+
+    return jsonify({"success": True})
