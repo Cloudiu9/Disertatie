@@ -29,7 +29,10 @@ REMOVE:
 Movies:
   Hot Girls Wanted
 TV Shows:
-  Redo of Healer
+  Redo of Healer,
+  Raw,
+  Tagesschau,
+  High School D×D
 
 
 - Make a real README.md with all the steps of functionality (ex: make env files in backend/frontend, run seed_movies.py, build_content_recommender, etc.)/project description

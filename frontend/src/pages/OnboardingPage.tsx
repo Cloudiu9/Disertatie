@@ -105,9 +105,6 @@ export default function OnboardingPage() {
     const movieGenres = genres.flatMap((g) => GENRE_MAP[g].movie);
     const tvGenres = genres.flatMap((g) => GENRE_MAP[g].tv);
 
-    console.log("MOVIE GENRES:", movieGenres);
-    console.log("TV GENRES:", tvGenres);
-
     const movieQuery = movieGenres
       .map((g) => `genres=${encodeURIComponent(g)}`)
       .join("&");

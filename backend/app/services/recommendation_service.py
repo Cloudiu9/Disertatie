@@ -1,15 +1,23 @@
-from app.db import users_collection, movies_collection, tv_collection
+from app.db import (
+    users_collection,
+    movies_collection,
+    tv_collection,
+    interactions_collection,
+)
 from collections import Counter
 from bson import ObjectId
 from typing import Any, List, Set
 import traceback
 
 
+INTERACTION_WEIGHTS = {
+    "seen": 1,
+    "like": 2,
+    "love": 3
+}
+
+
 def _extract_ids(raw_list: List[Any], media_type: str) -> List[int]:
-    """
-    Extract tmdb_ids from my_list filtered by media_type.
-    Handles both legacy int format and new object format.
-    """
     ids = []
 
     for item in raw_list:
@@ -18,17 +26,12 @@ def _extract_ids(raw_list: List[Any], media_type: str) -> List[int]:
                 ids.append(item["tmdb_id"])
 
         elif isinstance(item, int) and media_type == "movie":
-            # legacy support
             ids.append(item)
 
     return ids
 
 
 def _compute_global_popularity(media_type: str) -> Counter:
-    """
-    Count how many users have each item in their my_list.
-    Used to penalize overly popular items.
-    """
     global_counts = Counter()
 
     all_lists = users_collection.find({}, {"my_list": 1})
@@ -46,6 +49,29 @@ def _compute_global_popularity(media_type: str) -> Counter:
     return global_counts
 
 
+def _get_user_interactions(user_oid: ObjectId, media_type: str):
+    """
+    Returns { tmdb_id: weight }
+    """
+    interactions = interactions_collection.find(
+        {
+            "user_id": user_oid,
+            "media_type": media_type
+        }
+    )
+
+    weighted = {}
+
+    for i in interactions:
+        tmdb_id = i.get("tmdb_id")
+        interaction = i.get("interaction")
+
+        if tmdb_id and interaction in INTERACTION_WEIGHTS:
+            weighted[tmdb_id] = INTERACTION_WEIGHTS[interaction]
+
+    return weighted
+
+
 def _collaborative_recommendation(
     user_oid: ObjectId,
     item_ids: List[int],
@@ -53,12 +79,7 @@ def _collaborative_recommendation(
     collection,
     limit: int
 ):
-    """
-    Core collaborative filtering engine used for both movies and TV.
-    """
-
     if len(item_ids) < 3:
-        # cold start fallback
         return list(
             collection
             .find({}, {"_id": 0})
@@ -67,6 +88,7 @@ def _collaborative_recommendation(
         )
 
     current_set: Set[int] = set(item_ids)
+    current_weights = _get_user_interactions(user_oid, media_type)
 
     similar_users = users_collection.find(
         {
@@ -93,25 +115,37 @@ def _collaborative_recommendation(
         if not other_set:
             continue
 
-        intersection = len(current_set & other_set)
+        intersection_items = current_set & other_set
+
+        if not intersection_items:
+            continue
+
+        weighted_intersection = sum(
+            current_weights.get(item, 1) for item in intersection_items
+        )
+
         union = len(current_set | other_set)
 
         if union == 0:
             continue
 
-        similarity = intersection / union
+        similarity = weighted_intersection / union
 
         if similarity <= 0:
             continue
 
         for item_id in other_set - current_set:
 
-            weight = similarity / (1 + global_counts.get(item_id, 1))
+            interaction_boost = current_weights.get(item_id, 1)
+
+            weight = (
+                similarity * 0.5 +
+                interaction_boost * 0.3
+            ) / (1 + global_counts.get(item_id, 1))
 
             item_scores[item_id] = item_scores.get(item_id, 0) + weight
 
     if not item_scores:
-
         return list(
             collection
             .find({"tmdb_id": {"$nin": list(current_set)}}, {"_id": 0})
@@ -145,24 +179,15 @@ def _collaborative_recommendation(
 
 
 def generate_user_movie_recommendations(user_id: Any, limit: int = 12):
-    """
-    Movie recommendations.
-    """
-
     try:
 
-        if not isinstance(user_id, ObjectId):
-            user_oid = ObjectId(user_id)
-        else:
-            user_oid = user_id
+        user_oid = ObjectId(user_id) if not isinstance(user_id, ObjectId) else user_id
 
         user = users_collection.find_one({"_id": user_oid})
-
         if not user:
             return []
 
         raw_list = user.get("my_list", []) or []
-
         movie_ids = _extract_ids(raw_list, "movie")
 
         return _collaborative_recommendation(
@@ -179,24 +204,15 @@ def generate_user_movie_recommendations(user_id: Any, limit: int = 12):
 
 
 def generate_user_tv_recommendations(user_id: Any, limit: int = 12):
-    """
-    TV show recommendations.
-    """
-
     try:
 
-        if not isinstance(user_id, ObjectId):
-            user_oid = ObjectId(user_id)
-        else:
-            user_oid = user_id
+        user_oid = ObjectId(user_id) if not isinstance(user_id, ObjectId) else user_id
 
         user = users_collection.find_one({"_id": user_oid})
-
         if not user:
             return []
 
         raw_list = user.get("my_list", []) or []
-
         tv_ids = _extract_ids(raw_list, "tv")
 
         return _collaborative_recommendation(
