@@ -53,7 +53,7 @@ function MovieCard({
 
   const containerWidth =
     variant === "recommendation"
-      ? "min-w-[130px] lg:min-w-[195px]"
+      ? "min-w-[120px] lg:min-w-[172px]"
       : variant === "compact"
         ? "min-w-[130px] lg:min-w-[160px]"
         : "min-w-[130px] sm:min-w-[150px] lg:min-w-[230px]";

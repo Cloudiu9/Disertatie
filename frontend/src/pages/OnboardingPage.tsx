@@ -10,16 +10,54 @@ type MediaItem = {
 
 type Interaction = "seen" | "like" | "love";
 
-const GENRES = [
-  "Action",
-  "Comedy",
-  "Drama",
-  "Thriller",
-  "Sci-Fi",
-  "Fantasy",
-  "Adventure",
-  "Animation",
-];
+const GENRE_MAP = {
+  Action: {
+    movie: ["Action", "Adventure"],
+    tv: ["Action & Adventure"],
+  },
+  Comedy: {
+    movie: ["Comedy"],
+    tv: ["Comedy"],
+  },
+  Drama: {
+    movie: ["Drama"],
+    tv: ["Drama"],
+  },
+  Thriller: {
+    movie: ["Thriller", "Crime"],
+    tv: ["Crime", "Mystery"],
+  },
+  "Sci-Fi": {
+    movie: ["Science Fiction"],
+    tv: ["Sci-Fi & Fantasy"],
+  },
+  Fantasy: {
+    movie: ["Fantasy"],
+    tv: ["Sci-Fi & Fantasy"],
+  },
+  Adventure: {
+    movie: ["Adventure"],
+    tv: ["Action & Adventure"],
+  },
+  Animation: {
+    movie: ["Animation"],
+    tv: ["Animation"],
+  },
+
+  // NEW (fix coverage gaps)
+  Documentary: {
+    movie: ["Documentary"],
+    tv: ["Documentary"],
+  },
+  Mystery: {
+    movie: ["Mystery"],
+    tv: ["Mystery"],
+  },
+  Family: {
+    movie: ["Family"],
+    tv: ["Family", "Kids"],
+  },
+};
 
 function SkeletonGrid() {
   return (
@@ -44,7 +82,9 @@ function nextInteraction(current?: Interaction): Interaction | undefined {
 export default function OnboardingPage() {
   const navigate = useNavigate();
 
-  const [genres, setGenres] = useState<string[]>([]);
+  type GenreKey = keyof typeof GENRE_MAP;
+
+  const [genres, setGenres] = useState<GenreKey[]>([]);
   const [movies, setMovies] = useState<MediaItem[]>([]);
   const [tvShows, setTvShows] = useState<MediaItem[]>([]);
 
@@ -62,24 +102,37 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (genres.length === 0) return;
 
-    const query = genres.map((g) => `genres=${g}`).join("&");
+    const movieGenres = genres.flatMap((g) => GENRE_MAP[g].movie);
+    const tvGenres = genres.flatMap((g) => GENRE_MAP[g].tv);
+
+    console.log("MOVIE GENRES:", movieGenres);
+    console.log("TV GENRES:", tvGenres);
+
+    const movieQuery = movieGenres
+      .map((g) => `genres=${encodeURIComponent(g)}`)
+      .join("&");
+    const tvQuery = tvGenres
+      .map((g) => `genres=${encodeURIComponent(g)}`)
+      .join("&");
 
     setMoviesLoading(true);
     setTvLoading(true);
 
-    fetch(`/api/onboarding/movies?${query}`, { credentials: "include" })
+    fetch(`/api/onboarding/movies?${movieQuery}`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         setMovies(data);
         setMoviesLoading(false);
-      });
+      })
+      .catch(() => setMoviesLoading(false));
 
-    fetch(`/api/onboarding/tv?${query}`, { credentials: "include" })
+    fetch(`/api/onboarding/tv?${tvQuery}`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         setTvShows(data);
         setTvLoading(false);
-      });
+      })
+      .catch(() => setTvLoading(false));
   }, [genres]);
 
   function toggleMovie(id: number) {
@@ -192,12 +245,14 @@ export default function OnboardingPage() {
       </div>
 
       <div className="flex gap-3 flex-wrap mb-12">
-        {GENRES.map((g) => (
+        {(Object.keys(GENRE_MAP) as GenreKey[]).map((g) => (
           <button
             key={g}
             onClick={() =>
               setGenres((prev) =>
-                prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g],
+                prev.includes(g as GenreKey)
+                  ? prev.filter((x) => x !== g)
+                  : [...prev, g as GenreKey],
               )
             }
             className={`px-4 py-2 rounded-full text-sm font-medium transition ${
@@ -256,7 +311,7 @@ export default function OnboardingPage() {
           <div className="flex justify-center">
             <button
               onClick={submit}
-              className="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-lg text-lg font-semibold transition"
+              className="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-lg text-lg font-semibold transition cursor-pointer"
             >
               Finish Setup
             </button>

@@ -6,35 +6,11 @@ from datetime import datetime
 
 bp = Blueprint("onboarding", __name__, url_prefix="/api/onboarding")
 
-GENRE_MAP_MOVIE = {
-    "Sci-Fi": "Science Fiction"
-}
-
-GENRE_MAP_TV = {
-    "Action": "Action & Adventure",
-    "Adventure": "Action & Adventure",
-    "Sci-Fi": "Sci-Fi & Fantasy",
-    "Fantasy": "Sci-Fi & Fantasy"
-}
-
-
-def normalize_genres(genres, media_type):
-    mapped = []
-
-    for g in genres:
-        if media_type == "movie":
-            mapped.append(GENRE_MAP_MOVIE.get(g, g))
-        else:
-            mapped.append(GENRE_MAP_TV.get(g, g))
-
-    return list(set(mapped))
-
 
 @bp.route("/movies")
 def onboarding_movies():
 
     genres = request.args.getlist("genres")
-    genres = normalize_genres(genres, "movie")
 
     query = {}
     if genres:
@@ -54,7 +30,6 @@ def onboarding_movies():
 def onboarding_tv():
 
     genres = request.args.getlist("genres")
-    genres = normalize_genres(genres, "tv")
 
     query = {}
     if genres:

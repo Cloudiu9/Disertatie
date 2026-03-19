@@ -1,5 +1,3 @@
-# backend/app/services/recommendation_service.py
-
 from app.db import users_collection, movies_collection, tv_collection
 from collections import Counter
 from bson import ObjectId
