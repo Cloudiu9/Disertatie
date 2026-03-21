@@ -1,4 +1,4 @@
-export type Movie = {
+export type TVShow = {
   tmdb_id: number;
   media_type?: "movie" | "tv";
   title: string;
@@ -8,9 +8,11 @@ export type Movie = {
   popularity: number;
   genres: string[];
   overview?: string;
-  runtime?: number;
   poster_path?: string;
   backdrop_path?: string;
   original_language?: string;
   tagline?: string;
+  seasons?: number;
+  episodes?: number;
+  runtime?: number;
 };

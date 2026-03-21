@@ -1,28 +1,29 @@
 import { useEffect, useState } from "react";
-import { fetchRecommendations } from "../api/user_recommendations";
-import type { Movie } from "../types/Movie";
+import { fetchTVRecommendations } from "../api/user_recommendations";
 import MovieCard from "./MovieCard";
 import { useDragScroll } from "../hooks/useDragScroll";
 
-export default function UserRecommendationsRow() {
-  const [movies, setMovies] = useState<Movie[]>([]);
+export default function UserTVRecommendationsRow() {
+  const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const drag = useDragScroll();
 
   useEffect(() => {
-    fetchRecommendations().then((data) => {
-      setMovies(data);
+    fetchTVRecommendations().then((data) => {
+      setShows(data);
       setLoading(false);
     });
   }, []);
 
-  if (!loading && movies.length === 0) return null;
+  if (!loading && shows.length === 0) return null;
 
   return (
     <section className="space-y-4">
       <h2 className="px-6 text-lg font-semibold text-white">
-        Recommended For You
+        Recommended TV Shows For You
       </h2>
+
       <div
         ref={drag.ref}
         {...drag.handlers}
@@ -40,11 +41,12 @@ export default function UserRecommendationsRow() {
                 className="h-[225px] w-[150px] rounded bg-gray-800 animate-pulse flex-shrink-0"
               />
             ))
-          : movies.map((movie) => (
+          : shows.map((show: any) => (
               <MovieCard
-                key={movie.tmdb_id}
-                movie={movie}
+                key={show.tmdb_id}
+                movie={show}
                 didDrag={drag.didDrag}
+                mediaType="tv"
               />
             ))}
       </div>

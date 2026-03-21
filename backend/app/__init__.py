@@ -24,4 +24,7 @@ def create_app():
     from routes.user_recommendations import bp as user_recommendations_bp
     app.register_blueprint(user_recommendations_bp)
 
+    from routes.onboarding import bp as onboarding_bp
+    app.register_blueprint(onboarding_bp)
+
     return app

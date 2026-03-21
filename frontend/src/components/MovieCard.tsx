@@ -3,28 +3,39 @@ import type { Movie } from "../types/Movie";
 
 type Props = {
   movie: Movie;
-  didDrag: React.MutableRefObject<boolean>;
+  didDrag?: React.MutableRefObject<boolean>;
   variant?: "default" | "compact" | "recommendation";
-  onRemove?: (tmdb_id: number) => void;
+  onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
+  mediaType: "movie" | "tv";
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
-function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
+function MovieCard({
+  movie,
+  didDrag,
+  variant = "default",
+  onRemove,
+  mediaType,
+}: Props) {
   const navigate = useNavigate();
 
   const handleClick = (e: React.MouseEvent) => {
-    if (didDrag.current) {
+    if (didDrag?.current) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-    navigate(`/movies/${movie.tmdb_id}`);
+
+    const path =
+      mediaType === "tv" ? `/tv/${movie.tmdb_id}` : `/movies/${movie.tmdb_id}`;
+
+    navigate(path);
   };
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onRemove?.(movie.tmdb_id);
+    onRemove?.(movie.tmdb_id, mediaType);
   };
 
   const posterUrl = movie.poster_path
@@ -37,15 +48,12 @@ function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
 
     compact: "h-[200px] w-[130px] lg:h-[240px] lg:w-[160px]",
 
-    recommendation:
-      // Mobile = compact
-      // Desktop = full recommendation
-      "h-[195px] w-[130px] lg:h-[300px] lg:w-[200px]",
+    recommendation: "h-[195px] w-[130px] lg:h-[300px] lg:w-[200px]",
   };
 
   const containerWidth =
     variant === "recommendation"
-      ? "min-w-[130px] lg:min-w-[195px]"
+      ? "min-w-[120px] lg:min-w-[172px]"
       : variant === "compact"
         ? "min-w-[130px] lg:min-w-[160px]"
         : "min-w-[130px] sm:min-w-[150px] lg:min-w-[230px]";
@@ -56,12 +64,11 @@ function MovieCard({ movie, didDrag, variant = "default", onRemove }: Props) {
       draggable={false}
       className={`relative cursor-pointer select-none ${containerWidth}`}
     >
-      {/* Remove button */}
       {onRemove && (
         <button
           onClick={handleRemove}
           className="
-            absolute top-2 right-2
+            absolute top-1 right-3
             bg-black/70 hover:bg-black
             text-white
             rounded-full

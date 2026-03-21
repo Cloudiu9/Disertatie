@@ -26,7 +26,14 @@ High Art,
 Emmanuelle
 
 REMOVE:
-Hot Girls Wanted
+Movies:
+  Hot Girls Wanted
+TV Shows:
+  Redo of Healer,
+  Raw,
+  Tagesschau,
+  High School D×D
+
 
 - Make a real README.md with all the steps of functionality (ex: make env files in backend/frontend, run seed_movies.py, build_content_recommender, etc.)/project description
     Setup:
@@ -93,9 +100,34 @@ WORKING ON: User-based recommendations
 
 --DONE-- Add option to remove movie directly from My List
 
-TODO Make the movie trailer show up when the user clicks "Play" (separate popup window vs full screen?)
+--DONE-- Make the movie trailer show up when the user clicks "Play" (separate popup window vs full screen?)
 
 TODO Add the separate routes from the navbar (New, etc.)
-        -- TODO Add TV Shows ?
+        --DONE-- Add TV Shows 
+          - --DONE-- Fix Trailer API getting /api/movies/549/trailer HTTP/1.1" 200  instead of the TV Show route
+          - --DONE-- Add TV Details page
+          - --DONE-- Fix DetailsPage not updating instantly on page start if item is in My List/ adding and removing to MyList feels laggy (?minor issue/optimization)
+          - --DONE-- ^^ page might be rerendering after a few secs (if load -> add, get confirmation toast of adding -> flickers from +My List to In My List back to +My List)
+          - --DONE-- Clicking 'back' on a TV show's details should bring you to the TVPage, not the MoviesPage (MoviesPage was the only/main page before.)
+          - --DONE-- Improve My List look (separate Movies and TV Shows?)
+          - --DONE-- Add more items to the Hero section rotation (keep only 5 that rotate, but increase variety), increase hero visibility
+          - --DONE-- Add 'skeleton' loading to every(?) page
+          - --DONE-- Implement recommendations for TV Series (mix/separate?).
+          - --DONE-- Fix user recommendations for my list (probably breaks because of TV Shows?) -> had to update DB manually in order to delete older entries (movies that were just saved by id, not by an Object {tmdb_id872585 media_type "movie"})
+          - --DONE-- Add TV Show User Recommendations
+          - --DONE-- Improve cold start fix (user onboarding on profile creation)
+              - --DONE-- Improve look & feel of onboarding page: 
+                  - Add a button that asks the user whether they want to start onboarding on the "My List" page (in case they skipped it OR "My List" is empty)
+                  - --DONE-- Improve "Pick at least 3 *item* look
+                  - --DONE-- Make movie/tv shows container bigger (bigger movie cards on Desktop AND mobile)
+                  - --DONE-- TV Shows not appearing on "Action", "Thriller", "Fantasy", "Adventure" genre (for TV Shows they're called "Action & Adventure" "Sci-Fi & Fantasy")
+                  - --DONE-- Nothing appearing on the "Sci-Fi" genre (the actual genre is called "Science Fiction")
+                  - --DONE-- Add weights to onboarding (seen/like/love)
+                  - --DONE-- "Thriller" tag doesn't show any TV Shows (because they don't have the tag)
+                    - --DONE-- Fix this by adding more tags to search by (such as Documentary, Talk Show, etc.) that are specific to either Movies or TV Shows and hiding the one that does not fit the tag.
+                  - --DONE-- Update the user recommendations to use the weights (love/like)
+
+          - TODO Fix My List look breaking on smaller screens (cards work fine on full res / mobile res, but break in between)
+          - TODO Remove unwanted TV series (needs a reseed)
 
 TODO AI Recommendations + Chatbot(?)

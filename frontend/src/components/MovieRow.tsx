@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Movie } from "../types/Movie";
 import { fetchMovies } from "../api/movies";
+import { fetchTV } from "../api/tv";
 import MovieCard from "./MovieCard";
 import { useDragScroll } from "../hooks/useDragScroll";
 
@@ -8,16 +9,18 @@ type Props = {
   title: string;
   sort?: string;
   genre?: string;
+  mediaType?: "movie" | "tv";
   movies?: Movie[];
   disableFetch?: boolean;
   variant?: "default" | "compact" | "recommendation";
-  onRemove?: (tmdb_id: number) => void;
+  onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
 };
 
 function MovieRow({
   title,
   sort,
   genre,
+  mediaType = "movie",
   movies: injectedMovies,
   disableFetch,
   variant,
@@ -31,20 +34,27 @@ function MovieRow({
   const drag = useDragScroll();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  function fetchPage(p: number) {
+    if (mediaType === "tv") {
+      return fetchTV(p, 20, sort, genre);
+    }
+
+    return fetchMovies(p, 20, sort, genre);
+  }
+
   useEffect(() => {
     if (disableFetch) return;
 
     setLoading(true);
     setPage(1);
 
-    fetchMovies(1, 20, sort, genre).then((data) => {
+    fetchPage(1).then((data) => {
       setMovies(data.results);
       setHasMore(data.results.length === 20);
       setLoading(false);
     });
-  }, [sort, genre, disableFetch]);
+  }, [sort, genre, disableFetch, mediaType]);
 
-  // Infinite scroll trigger
   useEffect(() => {
     if (!hasMore || disableFetch) return;
 
@@ -52,9 +62,10 @@ function MovieRow({
       (entries) => {
         if (entries[0].isIntersecting && !loading) {
           const nextPage = page + 1;
+
           setLoading(true);
 
-          fetchMovies(nextPage, 20, sort, genre).then((data) => {
+          fetchPage(nextPage).then((data) => {
             setMovies((prev) => [...prev, ...data.results]);
             setHasMore(data.results.length === 20);
             setPage(nextPage);
@@ -73,9 +84,8 @@ function MovieRow({
     }
 
     return () => observer.disconnect();
-  }, [page, hasMore, loading, sort, genre, disableFetch]);
+  }, [page, hasMore, loading, sort, genre, disableFetch, mediaType]);
 
-  // Syncing for instant removal from MyList
   useEffect(() => {
     if (injectedMovies) {
       setMovies(injectedMovies);
@@ -102,13 +112,13 @@ function MovieRow({
           <MovieCard
             key={movie.tmdb_id}
             movie={movie}
+            mediaType={movie.media_type ?? mediaType}
             didDrag={drag.didDrag}
             variant={variant}
             onRemove={onRemove}
           />
         ))}
 
-        {/* Sentinel for infinite scroll */}
         {hasMore && <div ref={sentinelRef} className="w-10" />}
       </div>
     </section>
