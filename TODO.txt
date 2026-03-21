@@ -115,17 +115,17 @@ TODO Add the separate routes from the navbar (New, etc.)
           - --DONE-- Implement recommendations for TV Series (mix/separate?).
           - --DONE-- Fix user recommendations for my list (probably breaks because of TV Shows?) -> had to update DB manually in order to delete older entries (movies that were just saved by id, not by an Object {tmdb_id872585 media_type "movie"})
           - --DONE-- Add TV Show User Recommendations
-          - TODO Improve cold start fix (user onboarding on profile creation)
-              - TODO Improve look & feel of onboarding page: 
+          - --DONE-- Improve cold start fix (user onboarding on profile creation)
+              - --DONE-- Improve look & feel of onboarding page: 
                   - Add a button that asks the user whether they want to start onboarding on the "My List" page (in case they skipped it OR "My List" is empty)
                   - --DONE-- Improve "Pick at least 3 *item* look
                   - --DONE-- Make movie/tv shows container bigger (bigger movie cards on Desktop AND mobile)
                   - --DONE-- TV Shows not appearing on "Action", "Thriller", "Fantasy", "Adventure" genre (for TV Shows they're called "Action & Adventure" "Sci-Fi & Fantasy")
                   - --DONE-- Nothing appearing on the "Sci-Fi" genre (the actual genre is called "Science Fiction")
                   - --DONE-- Add weights to onboarding (seen/like/love)
-                  - TODO "Thriller" tag doesn't show any TV Shows (because they don't have the tag)
-                    - TODO Fix this by adding more tags to search by (such as Documentary, Talk Show, etc.) that are specific to either Movies or TV Shows and hiding the one that does not fit the tag.
-                  - TODO Update the user recommendations to use the weights (love/like)
+                  - --DONE-- "Thriller" tag doesn't show any TV Shows (because they don't have the tag)
+                    - --DONE-- Fix this by adding more tags to search by (such as Documentary, Talk Show, etc.) that are specific to either Movies or TV Shows and hiding the one that does not fit the tag.
+                  - --DONE-- Update the user recommendations to use the weights (love/like)
 
           - TODO Fix My List look breaking on smaller screens (cards work fine on full res / mobile res, but break in between)
           - TODO Remove unwanted TV series (needs a reseed)

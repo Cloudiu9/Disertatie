@@ -207,8 +207,8 @@ Open [http://localhost:5173](http://localhost:5173)
 ## 9. Planned Features
 
 - [x] Trailer popup player
-- [ ] Separate browse routes (New, Top, Popular)
-- [ ] TV show support
+- [x] TV show support
+- [x] Onboarding feature for better recommendations
 - [ ] AI-enhanced recommendations
 - [ ] Chatbot assistant
 
