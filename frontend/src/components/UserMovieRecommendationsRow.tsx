@@ -26,7 +26,7 @@ export default function UserMovieRecommendationsRow() {
       </h2>
 
       <div
-        ref={drag.ref}
+        ref={drag.ref as React.RefObject<HTMLDivElement>}
         {...drag.handlers}
         className="
           flex gap-4 px-6

@@ -126,13 +126,14 @@ function MyListPage() {
                 Movies ({movies.length})
               </h2>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6 [&>*]:w-full [&_img]:w-full [&_img]:aspect-[2/3] [&_img]:h-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6">
                 {movies.map((item) => (
                   <MovieCard
                     key={`movie-${item.tmdb_id}`}
                     movie={item}
                     mediaType="movie"
                     onRemove={handleRemove}
+                    variant="list"
                   />
                 ))}
               </div>
@@ -145,13 +146,14 @@ function MyListPage() {
                 TV Shows ({tvShows.length})
               </h2>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6 [&>*]:w-full [&_img]:w-full [&_img]:aspect-[2/3] [&_img]:h-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6">
                 {tvShows.map((item) => (
                   <MovieCard
                     key={`tv-${item.tmdb_id}`}
                     movie={item}
                     mediaType="tv"
                     onRemove={handleRemove}
+                    variant="list"
                   />
                 ))}
               </div>

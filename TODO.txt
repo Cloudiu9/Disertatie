@@ -128,6 +128,6 @@ TODO Add the separate routes from the navbar (New, etc.)
                   - --DONE-- Update the user recommendations to use the weights (love/like)
 
           - TODO Fix My List look breaking on smaller screens (cards work fine on full res / mobile res, but break in between)
-          - TODO Remove unwanted TV series (needs a reseed)
+          - DONE Remove unwanted TV series (needs a reseed)
 
 TODO AI Recommendations + Chatbot(?)

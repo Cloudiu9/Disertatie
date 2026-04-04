@@ -4,7 +4,7 @@ import type { Movie } from "../types/Movie";
 type Props = {
   movie: Movie;
   didDrag?: React.MutableRefObject<boolean>;
-  variant?: "default" | "compact" | "recommendation";
+  variant?: "default" | "compact" | "recommendation" | "list";
   onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
   mediaType: "movie" | "tv";
 };
@@ -26,10 +26,8 @@ function MovieCard({
       e.stopPropagation();
       return;
     }
-
     const path =
       mediaType === "tv" ? `/tv/${movie.tmdb_id}` : `/movies/${movie.tmdb_id}`;
-
     navigate(path);
   };
 
@@ -42,21 +40,25 @@ function MovieCard({
     ? `${IMAGE_BASE_URL}${movie.poster_path}`
     : "/placeholder-poster.png";
 
+  // For scroll carousels (compact/recommendation), keep fixed sizing
+  // so they don't collapse inside a non-grid flex container.
+  // For "default" (used in grids), go fully fluid.
   const sizeClasses = {
     default:
       "h-[200px] w-[130px] sm:h-[225px] sm:w-[150px] lg:h-[315px] lg:w-[230px]",
-
     compact: "h-[200px] w-[130px] lg:h-[240px] lg:w-[160px]",
-
     recommendation: "h-[195px] w-[130px] lg:h-[300px] lg:w-[200px]",
+    list: "w-full aspect-[2/3]",
   };
 
   const containerWidth =
-    variant === "recommendation"
-      ? "min-w-[120px] lg:min-w-[172px]"
-      : variant === "compact"
-        ? "min-w-[130px] lg:min-w-[160px]"
-        : "min-w-[130px] sm:min-w-[150px] lg:min-w-[230px]";
+    variant === "list"
+      ? "w-full"
+      : variant === "recommendation"
+        ? "min-w-[120px] lg:min-w-[172px]"
+        : variant === "compact"
+          ? "min-w-[130px] lg:min-w-[160px]"
+          : "min-w-[130px] sm:min-w-[150px] lg:min-w-[230px]";
 
   return (
     <div
@@ -81,7 +83,6 @@ function MovieCard({
           ×
         </button>
       )}
-
       <img
         src={posterUrl}
         alt={movie.title}

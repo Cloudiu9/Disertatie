@@ -105,7 +105,7 @@ export default function ProfilePage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-gray-400 text-sm mb-1">
-                        Movies in My List
+                        Items in My List
                       </p>
                       <p className="text-4xl font-bold">{myListCount}</p>
                     </div>
