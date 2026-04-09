@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Movie } from "../types/Movie";
 import { fetchMovies } from "../api/movies";
 import { fetchTV } from "../api/tv";
@@ -12,7 +12,7 @@ type Props = {
   mediaType?: "movie" | "tv";
   movies?: Movie[];
   disableFetch?: boolean;
-  variant?: "default" | "compact" | "recommendation";
+  variant?: "default" | "compact" | "recommendation" | "list";
   onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
 };
 
@@ -34,13 +34,15 @@ function MovieRow({
   const drag = useDragScroll();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  function fetchPage(p: number) {
-    if (mediaType === "tv") {
-      return fetchTV(p, 20, sort, genre);
-    }
-
-    return fetchMovies(p, 20, sort, genre);
-  }
+  const fetchPage = useCallback(
+    (p: number) => {
+      if (mediaType === "tv") {
+        return fetchTV(p, 20, sort, genre);
+      }
+      return fetchMovies(p, 20, sort, genre);
+    },
+    [mediaType, sort, genre],
+  );
 
   useEffect(() => {
     if (disableFetch) return;
@@ -53,8 +55,7 @@ function MovieRow({
       setHasMore(data.results.length === 20);
       setLoading(false);
     });
-  }, [sort, genre, disableFetch, mediaType]);
-
+  }, [sort, genre, disableFetch, mediaType, fetchPage]);
   useEffect(() => {
     if (!hasMore || disableFetch) return;
 
@@ -84,7 +85,17 @@ function MovieRow({
     }
 
     return () => observer.disconnect();
-  }, [page, hasMore, loading, sort, genre, disableFetch, mediaType]);
+  }, [
+    page,
+    hasMore,
+    loading,
+    sort,
+    genre,
+    disableFetch,
+    mediaType,
+    fetchPage,
+    drag.ref,
+  ]);
 
   useEffect(() => {
     if (injectedMovies) {
@@ -99,7 +110,7 @@ function MovieRow({
       </h2>
 
       <div
-        ref={drag.ref}
+        ref={drag.ref as React.RefObject<HTMLDivElement>}
         {...drag.handlers}
         className="
           flex gap-3 sm:gap-4 px-4 sm:px-6
