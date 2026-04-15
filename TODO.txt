@@ -102,7 +102,7 @@ WORKING ON: User-based recommendations
 
 --DONE-- Make the movie trailer show up when the user clicks "Play" (separate popup window vs full screen?)
 
-TODO Add the separate routes from the navbar (New, etc.)
+--DONE-- Add the separate routes from the navbar (New, etc.)
         --DONE-- Add TV Shows 
           - --DONE-- Fix Trailer API getting /api/movies/549/trailer HTTP/1.1" 200  instead of the TV Show route
           - --DONE-- Add TV Details page
@@ -127,7 +127,11 @@ TODO Add the separate routes from the navbar (New, etc.)
                     - --DONE-- Fix this by adding more tags to search by (such as Documentary, Talk Show, etc.) that are specific to either Movies or TV Shows and hiding the one that does not fit the tag.
                   - --DONE-- Update the user recommendations to use the weights (love/like)
 
-          - TODO Fix My List look breaking on smaller screens (cards work fine on full res / mobile res, but break in between)
+          - DONE Fix My List look breaking on smaller screens (cards work fine on full res / mobile res, but break in between)
           - DONE Remove unwanted TV series (needs a reseed)
+
+TODO Split My List into "Watched" and "To Watch" 
+
+TODO Main Movie/TV Show pages seem to double load the Hero? (ex: click on Movies/TV Shows OR refresh page, title + poster appear, new title + poster appear after ~0.5s that replaces that one) (maybe caused by an incorrent useEffect?)
 
 TODO AI Recommendations + Chatbot(?)

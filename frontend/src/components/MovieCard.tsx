@@ -87,6 +87,9 @@ function MovieCard({
         src={posterUrl}
         alt={movie.title}
         draggable={false}
+        onError={(e) => {
+          e.currentTarget.src = "/placeholder-poster.png";
+        }}
         className={`
           rounded-md object-cover
           transition-transform duration-300 hover:scale-105

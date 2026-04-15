@@ -111,6 +111,7 @@ function MovieRow({
 
       <div
         ref={drag.ref as React.RefObject<HTMLDivElement>}
+        // eslint-disable-next-line react-hooks/refs
         {...drag.handlers}
         className="
           flex gap-3 sm:gap-4 px-4 sm:px-6
