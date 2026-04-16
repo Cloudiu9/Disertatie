@@ -131,6 +131,8 @@ WORKING ON: User-based recommendations
           - DONE Remove unwanted TV series (needs a reseed)
 
 TODO Split My List into "Watched" and "To Watch" 
+    - --DONE-- Modified backend route to support this
+    - --DONE-- Modified frontend (MovieCard, MyListPage) to add a 'section' prop
 
 TODO Main Movie/TV Show pages seem to double load the Hero? (ex: click on Movies/TV Shows OR refresh page, title + poster appear, new title + poster appear after ~0.5s that replaces that one) (maybe caused by an incorrent useEffect?)
 

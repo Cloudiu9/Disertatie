@@ -11,71 +11,72 @@ bp = Blueprint("my_list", __name__, url_prefix="/api")
 # GET MY LIST
 # =========================
 
+def _collection_for(media_type: str):
+    return movies_collection if media_type == "movie" else tv_collection
+
+
 @bp.route("/my-list", methods=["GET"])
 def get_my_list():
-
     user_id = get_current_user_id()
 
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
-    user = users_collection.find_one(
-        {"_id": ObjectId(user_id)},
-        {"my_list": 1}
-    )
+    user_oid = ObjectId(user_id)
+    user = users_collection.find_one({"_id": user_oid}, {"my_list": 1})
 
     if not user:
-        return jsonify({"error": "Unauthorized"}), 401
+        return jsonify([])
 
-    items = user.get("my_list", [])
+    raw_watchlist = user.get("my_list", []) or []
 
-    result = []
+    watched = []
+    watched_keys = set()
 
-    for entry in items:
+    for interaction in interactions_collection.find(
+        {"user_id": user_oid},
+        {"_id": 0, "tmdb_id": 1, "media_type": 1, "interaction": 1},
+    ):
+        key = (interaction["tmdb_id"], interaction["media_type"])
+        watched_keys.add(key)
 
-        if isinstance(entry,int):
+        collection = _collection_for(interaction["media_type"])
+        doc = collection.find_one({"tmdb_id": interaction["tmdb_id"]}, {"_id": 0})
 
-            tmdb_id=entry
-
-            movie=movies_collection.find_one(
-                {"tmdb_id":tmdb_id},
-                {"_id":0}
-            )
-
-            if movie:
-
-                movie["media_type"]="movie"
-
-                result.append(movie)
-
+        if not doc:
             continue
 
-        tmdb_id = entry.get("tmdb_id")
-        media_type = entry.get("media_type")
+        doc["media_type"] = interaction["media_type"]
+        doc["section"] = "watched"
+        doc["interaction"] = interaction["interaction"]
+        watched.append(doc)
 
-        if media_type == "movie":
+    watchlist = []
+    for item in raw_watchlist:
+        if not isinstance(item, dict):
+            continue
 
-            movie = movies_collection.find_one(
-                {"tmdb_id": tmdb_id},
-                {"_id": 0}
-            )
+        tmdb_id = item.get("tmdb_id")
+        media_type = item.get("media_type")
 
-            if movie:
-                movie["media_type"] = "movie"
-                result.append(movie)
+        if tmdb_id is None or media_type not in {"movie", "tv"}:
+            continue
 
-        elif media_type == "tv":
+        key = (tmdb_id, media_type)
+        if key in watched_keys:
+            continue
 
-            tv = tv_collection.find_one(
-                {"tmdb_id": tmdb_id},
-                {"_id": 0}
-            )
+        collection = _collection_for(media_type)
+        doc = collection.find_one({"tmdb_id": tmdb_id}, {"_id": 0})
 
-            if tv:
-                tv["media_type"] = "tv"
-                result.append(tv)
+        if not doc:
+            continue
 
-    return jsonify(result)
+        doc["media_type"] = media_type
+        doc["section"] = "watchlist"
+        watchlist.append(doc)
+
+    return jsonify(watched + watchlist)
 
 
 # =========================
@@ -126,30 +127,51 @@ def add_to_my_list():
 # REMOVE
 # =========================
 
+from flask import request
+
 @bp.route("/my-list/<int:tmdb_id>/<media_type>", methods=["DELETE"])
 def remove_from_my_list(tmdb_id, media_type):
-
     user_id = get_current_user_id()
 
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
-    users_collection.update_one(
+    section = request.args.get("section", "watchlist")
 
-        {"_id": ObjectId(user_id)},
+    if section == "watched":
+        interactions_collection.delete_one(
+            {
+                "user_id": ObjectId(user_id),
+                "tmdb_id": tmdb_id,
+                "media_type": media_type,
+            }
+        )
 
-        {
-            "$pull": {
-                "my_list": {
-                    "tmdb_id": tmdb_id,
-                    "media_type": media_type
+        users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$pull": {
+                    "my_list": {
+                        "tmdb_id": tmdb_id,
+                        "media_type": media_type,
+                    }
                 }
             }
-        }
+        )
+    else:
+        users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$pull": {
+                    "my_list": {
+                        "tmdb_id": tmdb_id,
+                        "media_type": media_type,
+                    }
+                }
+            }
+        )
 
-    )
-
-    return jsonify({"status": "removed"})
+    return jsonify({"success": True})
 
 @bp.route("/reset-preferences", methods=["POST"])
 def reset_preferences():

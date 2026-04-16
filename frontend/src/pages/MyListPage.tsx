@@ -11,7 +11,11 @@ import { toast } from "react-hot-toast";
 import MovieCard from "../components/MovieCard";
 import { SkeletonGrid } from "../components/Skeletons";
 
-type Item = Movie | TVShow;
+type Item = (Movie | TVShow) & {
+  media_type: "movie" | "tv";
+  section?: "watched" | "watchlist";
+  interaction?: "seen" | "like" | "love";
+};
 
 function MyListPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -19,22 +23,36 @@ function MyListPage() {
 
   const navigate = useNavigate();
 
-  const movies = items.filter((i) => i.media_type === "movie");
-  const tvShows = items.filter((i) => i.media_type === "tv");
+  const watched = items.filter((i) => i.section === "watched");
+  const watchlist = items.filter((i) => i.section === "watchlist");
 
   useEffect(() => {
     fetchMyList()
-      .then(setItems)
+      .then((data) => {
+        const validItems = data.filter(
+          (item) => item.media_type === "movie" || item.media_type === "tv",
+        ) as Item[];
+        setItems(validItems);
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  const handleRemove = async (tmdb_id: number, mediaType: "movie" | "tv") => {
+  const handleRemove = async (
+    tmdb_id: number,
+    mediaType: "movie" | "tv",
+    section: "watched" | "watchlist" = "watchlist",
+  ) => {
     try {
-      await removeFromMyList(tmdb_id, mediaType);
+      await removeFromMyList(tmdb_id, mediaType, section);
 
       setItems((prev) =>
         prev.filter(
-          (i) => !(i.tmdb_id === tmdb_id && i.media_type === mediaType),
+          (i) =>
+            !(
+              i.tmdb_id === tmdb_id &&
+              i.media_type === mediaType &&
+              i.section === section
+            ),
         ),
       );
 
@@ -120,7 +138,27 @@ function MyListPage() {
         </div>
 
         <div className="px-8 space-y-12">
-          {movies.length > 0 && (
+          {watched.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-semibold text-white mb-6">
+                Watched ({watched.length})
+              </h2>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6">
+                {watched.map((item) => (
+                  <MovieCard
+                    key={`watched-${item.tmdb_id}-${item.media_type}`}
+                    movie={item}
+                    mediaType={item.media_type}
+                    section="watched"
+                    onRemove={handleRemove}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/*           {movies.length > 0 && (
             <div>
               <h2 className="text-2xl font-semibold text-white mb-6">
                 Movies ({movies.length})
@@ -138,22 +176,22 @@ function MyListPage() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
-          {tvShows.length > 0 && (
+          {watchlist.length > 0 && (
             <div>
               <h2 className="text-2xl font-semibold text-white mb-6">
-                TV Shows ({tvShows.length})
+                Watchlist ({watchlist.length})
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6">
-                {tvShows.map((item) => (
+                {watchlist.map((item) => (
                   <MovieCard
-                    key={`tv-${item.tmdb_id}`}
+                    key={`watchlist-${item.tmdb_id}-${item.media_type}`}
                     movie={item}
-                    mediaType="tv"
+                    mediaType={item.media_type}
+                    section="watchlist"
                     onRemove={handleRemove}
-                    variant="list"
                   />
                 ))}
               </div>

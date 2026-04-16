@@ -35,10 +35,10 @@ export async function addToMyList(tmdb_id: number, mediaType: "movie" | "tv") {
 export async function removeFromMyList(
   tmdb_id: number,
   mediaType: "movie" | "tv",
+  section: "watched" | "watchlist" = "watchlist",
 ) {
   const res = await fetch(
-    `/api/my-list/${tmdb_id}/${mediaType}`,
-
+    `/api/my-list/${tmdb_id}/${mediaType}?section=${section}`,
     {
       method: "DELETE",
       credentials: "include",

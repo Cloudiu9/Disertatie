@@ -1,12 +1,23 @@
 import { useNavigate } from "react-router-dom";
-import type { Movie } from "../types/Movie";
+// import type { Movie } from "../types/Movie";
+
+type CardItem = {
+  tmdb_id: number;
+  title: string;
+  poster_path?: string;
+};
 
 type Props = {
-  movie: Movie;
+  movie: CardItem;
   didDrag?: React.MutableRefObject<boolean>;
   variant?: "default" | "compact" | "recommendation" | "list";
-  onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
+  onRemove?: (
+    tmdbId: number,
+    mediaType: "movie" | "tv",
+    section?: "watched" | "watchlist",
+  ) => void;
   mediaType: "movie" | "tv";
+  section?: "watched" | "watchlist";
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -17,6 +28,7 @@ function MovieCard({
   variant = "default",
   onRemove,
   mediaType,
+  section,
 }: Props) {
   const navigate = useNavigate();
 
@@ -33,7 +45,7 @@ function MovieCard({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onRemove?.(movie.tmdb_id, mediaType);
+    onRemove?.(movie.tmdb_id, mediaType, section);
   };
 
   const posterUrl = movie.poster_path

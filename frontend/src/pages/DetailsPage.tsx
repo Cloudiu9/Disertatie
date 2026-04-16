@@ -60,7 +60,7 @@ function DetailsPage({ mediaType }: Props) {
         setItem(d);
         setLoading(false);
       });
-  }, [id, mediaType]);
+  }, [baseApi, id, mediaType]);
 
   // Recommendations
 
@@ -73,7 +73,7 @@ function DetailsPage({ mediaType }: Props) {
       .then((r) => r.json())
       .then(setRecommendations)
       .catch(() => setRecommendations([]));
-  }, [id, mediaType]);
+  }, [id, mediaType, recApi]);
 
   // My list
 
