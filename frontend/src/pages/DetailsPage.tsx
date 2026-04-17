@@ -6,7 +6,7 @@ import MovieMeta from "../components/MovieMeta";
 import TrailerModal from "../components/TrailerModal";
 
 import { fetchTrailer } from "../api/trailer";
-import { addToMyList, removeFromMyList } from "../api/myList";
+import { addToMyList, fetchMyList, removeFromMyList } from "../api/myList";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -23,31 +23,64 @@ type Props = {
 
 type Item = Movie | TVShow;
 
+type SavedItem = {
+  tmdb_id: number;
+  media_type: "movie" | "tv";
+  section?: "watched" | "watchlist";
+  interaction?: "seen" | "like" | "love";
+};
+
 function DetailsPage({ mediaType }: Props) {
   const { id } = useParams();
+  const { user } = useAuth();
+
   const [item, setItem] = useState<Item | null>(null);
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [recommendations, setRecommendations] = useState<Item[]>([]);
+
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [loadingTrailer, setLoadingTrailer] = useState(false);
   const [prefetchedTrailer, setPrefetchedTrailer] = useState<string | null>(
     null,
   );
-  const { user, myList, addLocal, removeLocal } = useAuth();
+
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
 
   const baseApi = mediaType === "tv" ? "/api/tv" : "/api/movies";
   const recApi = `/api/recommendations/${mediaType}`;
 
-  const inMyList =
+  const resolvedMediaType: "movie" | "tv" = item?.media_type ?? mediaType;
+
+  // =========================
+  // STATE CHECKS
+  // =========================
+
+  const inWatchlist =
     !!item &&
-    myList.some(
+    savedItems.some(
       (m) =>
         m.tmdb_id === item.tmdb_id &&
-        m.media_type === (item.media_type ?? mediaType),
+        m.media_type === resolvedMediaType &&
+        m.section === "watchlist",
     );
 
-  // Load item
+  const watchedItem =
+    item &&
+    savedItems.find(
+      (m) =>
+        m.tmdb_id === item.tmdb_id &&
+        m.media_type === resolvedMediaType &&
+        m.section === "watched",
+    );
+
+  const inWatched = !!watchedItem;
+
+  // =========================
+  // FETCH DATA
+  // =========================
 
   useEffect(() => {
     if (!id) return;
@@ -62,12 +95,8 @@ function DetailsPage({ mediaType }: Props) {
       });
   }, [baseApi, id, mediaType]);
 
-  // Recommendations
-
   useEffect(() => {
     if (!id) return;
-
-    setRecommendations([]);
 
     fetch(`${recApi}/${id}`)
       .then((r) => r.json())
@@ -75,63 +104,102 @@ function DetailsPage({ mediaType }: Props) {
       .catch(() => setRecommendations([]));
   }, [id, mediaType, recApi]);
 
-  // My list
-
-  // useEffect(() => {
-  //   if (!item) return;
-
-  //   setCheckingList(true);
-
-  //   fetch("/api/my-list", { credentials: "include" })
-  //     .then((r) => r.json())
-  //     .then((list: Movie[]) => {
-  //       const exists = list.some(
-  //         (m) =>
-  //           m.tmdb_id === item.tmdb_id &&
-  //           m.media_type === (item.media_type ?? mediaType),
-  //       );
-
-  //       setInMyList(exists);
-  //     })
-  //     .catch(() => setInMyList(false))
-  //     .finally(() => setCheckingList(false));
-  // }, [item, mediaType]);
-
-  // Trailer prefetch
-
   useEffect(() => {
     if (!item) return;
 
-    setPrefetchedTrailer(null);
-
     fetchTrailer(item.tmdb_id, mediaType)
-      .then((d) => {
-        if (d.key) setPrefetchedTrailer(d.key);
-      })
+      .then((d) => d.key && setPrefetchedTrailer(d.key))
       .catch(() => {});
   }, [item, mediaType]);
 
-  if (loading)
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        Loading...
-      </div>
-    );
+  useEffect(() => {
+    if (!user) return;
 
-  if (!item)
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        Not found
-      </div>
-    );
+    fetchMyList()
+      .then((data) => setSavedItems(data as SavedItem[]))
+      .catch(() => setSavedItems([]));
+  }, [user, id]);
 
-  const posterUrl = item.poster_path
-    ? `${IMAGE_BASE}/w500${item.poster_path}`
-    : "/placeholder-poster.png";
+  // =========================
+  // ACTIONS
+  // =========================
 
-  const backdropUrl = item.backdrop_path
-    ? `${IMAGE_BASE}/original${item.backdrop_path}`
-    : undefined;
+  async function refreshList() {
+    const data = await fetchMyList();
+    setSavedItems(data as SavedItem[]);
+  }
+
+  async function toggleWatchlist() {
+    if (!item) return;
+
+    if (inWatched) {
+      toast.error("Already marked as Watched");
+      return;
+    }
+
+    if (!user) {
+      toast.error("Login required");
+      return;
+    }
+
+    try {
+      if (inWatchlist) {
+        await removeFromMyList(item.tmdb_id, resolvedMediaType, "watchlist");
+        toast.success("Removed from Watchlist");
+      } else {
+        await addToMyList(item.tmdb_id, resolvedMediaType, "watchlist");
+        toast.success("Added to Watchlist");
+      }
+
+      await refreshList();
+    } catch {
+      toast.error("Action failed");
+    }
+  }
+
+  async function addToWatched(interaction: "seen" | "like" | "love") {
+    if (!item) return;
+
+    if (!user) {
+      toast.error("Login required");
+      return;
+    }
+
+    try {
+      await addToMyList(
+        item.tmdb_id,
+        resolvedMediaType,
+        "watched",
+        interaction,
+      );
+
+      toast.success(`Marked as ${interaction}`);
+      setActionMenuOpen(false);
+
+      await refreshList();
+    } catch {
+      toast.error("Action failed");
+    }
+  }
+
+  async function removeFromWatched() {
+    if (!item) return;
+
+    if (!user) {
+      toast.error("Login required");
+      return;
+    }
+
+    try {
+      await removeFromMyList(item.tmdb_id, resolvedMediaType, "watched");
+      toast.success("Removed from Watched");
+      setActionMenuOpen(false);
+
+      await refreshList();
+    } catch {
+      toast.error("Action failed");
+    }
+  }
 
   async function playTrailer() {
     if (!item) return;
@@ -143,25 +211,52 @@ function DetailsPage({ mediaType }: Props) {
 
       if (!key) {
         const d = await fetchTrailer(item.tmdb_id, mediaType);
-
         key = d.key;
       }
 
       if (!key) {
         toast.error("Trailer not available");
-
         return;
       }
 
       setTrailerKey(key);
-
       setTrailerOpen(true);
-    } catch {
-      toast.error("Trailer error");
     } finally {
       setLoadingTrailer(false);
     }
   }
+
+  // =========================
+  // UI STATES
+  // =========================
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
+        Not found
+      </div>
+    );
+  }
+
+  const posterUrl = item.poster_path
+    ? `${IMAGE_BASE}/w500${item.poster_path}`
+    : "/placeholder-poster.png";
+
+  const backdropUrl = item.backdrop_path
+    ? `${IMAGE_BASE}/original${item.backdrop_path}`
+    : undefined;
+
+  // =========================
+  // RENDER
+  // =========================
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -199,7 +294,7 @@ function DetailsPage({ mediaType }: Props) {
                 <p className="text-gray-200 max-w-xl">{item.overview}</p>
               )}
 
-              <div className="flex gap-3 mt-6">
+              <div className="flex gap-3 mt-6 items-start">
                 <button
                   onClick={playTrailer}
                   className="bg-white text-black px-6 py-2 rounded font-semibold cursor-pointer"
@@ -208,72 +303,75 @@ function DetailsPage({ mediaType }: Props) {
                 </button>
 
                 <button
-                  onClick={async () => {
-                    if (!user) {
-                      toast.error("Login required");
-
-                      return;
-                    }
-
-                    if (inMyList) {
-                      removeLocal({
-                        tmdb_id: item.tmdb_id,
-                        media_type: item.media_type ?? mediaType,
-                      });
-
-                      try {
-                        await removeFromMyList(
-                          item.tmdb_id,
-                          item.media_type ?? mediaType,
-                        );
-                        toast.success("Removed");
-                      } catch {
-                        addLocal({
-                          tmdb_id: item.tmdb_id,
-                          media_type: item.media_type ?? mediaType,
-                        });
-                        toast.error("Action failed");
-                      }
-                    } else {
-                      addLocal({
-                        tmdb_id: item.tmdb_id,
-                        media_type: item.media_type ?? mediaType,
-                      });
-
-                      try {
-                        await addToMyList(
-                          item.tmdb_id,
-                          item.media_type ?? mediaType,
-                        );
-                        toast.success("Added");
-                      } catch {
-                        removeLocal({
-                          tmdb_id: item.tmdb_id,
-                          media_type: item.media_type ?? mediaType,
-                        });
-                        toast.error("Action failed");
-                      }
-                    }
-                  }}
+                  onClick={toggleWatchlist}
                   className="bg-white/20 px-5 py-2 rounded font-semibold cursor-pointer"
                 >
-                  {inMyList ? "✓ In My List" : "+ My List"}
+                  {inWatchlist ? "✓ In Watchlist" : "+ Watchlist"}
                 </button>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setActionMenuOpen((prev) => !prev)}
+                    className="bg-red-600 hover:bg-red-500 px-5 py-2 rounded font-semibold cursor-pointer"
+                  >
+                    {inWatched ? "✓ Watched" : "Watched"}
+                  </button>
+
+                  {actionMenuOpen && (
+                    <div className="absolute left-0 mt-2 w-44 rounded-lg border border-white/10 bg-black/95 shadow-xl overflow-hidden z-20">
+                      <button
+                        onClick={() => addToWatched("seen")}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10"
+                      >
+                        Seen
+                      </button>
+                      <button
+                        onClick={() => addToWatched("like")}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10"
+                      >
+                        Like
+                      </button>
+                      <button
+                        onClick={() => addToWatched("love")}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10"
+                      >
+                        Love
+                      </button>
+
+                      <div className="h-px bg-white/10 my-1" />
+
+                      <button
+                        onClick={removeFromWatched}
+                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10"
+                      >
+                        Remove from Watched
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {inWatched && watchedItem?.interaction && (
+                <p className="mt-3 text-sm text-gray-400">
+                  Marked as: {watchedItem.interaction}
+                </p>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {recommendations.length > 0 && (
-        <MovieRow
-          title="Recommended"
-          movies={recommendations.filter((r) => r.tmdb_id !== item.tmdb_id)}
-          disableFetch
-          mediaType={mediaType}
-          variant="recommendation"
-        />
-      )}
+      <div className="mt-10">
+        {recommendations.length > 0 && (
+          <MovieRow
+            title="Recommended"
+            movies={recommendations.filter((r) => r.tmdb_id !== item.tmdb_id)}
+            disableFetch
+            mediaType={mediaType}
+            variant="recommendation"
+          />
+        )}
+      </div>
 
       <div className="max-w-screen-2xl mx-auto px-6 py-8">
         <Link

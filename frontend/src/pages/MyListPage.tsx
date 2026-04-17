@@ -13,7 +13,7 @@ import { SkeletonGrid } from "../components/Skeletons";
 
 type Item = (Movie | TVShow) & {
   media_type: "movie" | "tv";
-  section?: "watched" | "watchlist";
+  section: "watched" | "watchlist";
   interaction?: "seen" | "like" | "love";
 };
 
@@ -137,6 +137,33 @@ function MyListPage() {
           </button>
         </div>
 
+        <div className="px-8 mb-8 flex flex-wrap gap-3">
+          {[
+            {
+              color: "bg-blue-400",
+              label: "Seen",
+            },
+            {
+              color: "bg-yellow-400",
+              label: "Like",
+            },
+            {
+              color: "bg-red-500",
+              label: "Love",
+            },
+          ].map(({ color, label }) => (
+            <div
+              key={label}
+              className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-400"
+            >
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${color}`} />
+              <span>
+                <span className="text-white font-medium">{label}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+
         <div className="px-8 space-y-12">
           {watched.length > 0 && (
             <div>
@@ -151,32 +178,13 @@ function MyListPage() {
                     movie={item}
                     mediaType={item.media_type}
                     section="watched"
+                    interaction={item.interaction}
                     onRemove={handleRemove}
                   />
                 ))}
               </div>
             </div>
           )}
-
-          {/*           {movies.length > 0 && (
-            <div>
-              <h2 className="text-2xl font-semibold text-white mb-6">
-                Movies ({movies.length})
-              </h2>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-6">
-                {movies.map((item) => (
-                  <MovieCard
-                    key={`movie-${item.tmdb_id}`}
-                    movie={item}
-                    mediaType="movie"
-                    onRemove={handleRemove}
-                    variant="list"
-                  />
-                ))}
-              </div>
-            </div>
-          )} */}
 
           {watchlist.length > 0 && (
             <div>

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 from bson import ObjectId
 
@@ -104,21 +105,55 @@ def add_to_my_list():
 
         return jsonify({"error": "media_type required"}), 400
 
+    section = data.get("section", "watchlist")  # or "watched"
+    if section not in {"watchlist", "watched"}:
+        return jsonify({"error": "invalid section"}), 400
 
-    users_collection.update_one(
+    interaction = data.get("interaction", "seen")
+    if interaction not in {"seen", "like", "love"}:
+        return jsonify({"error": "invalid interaction"}), 400
 
-        {"_id": ObjectId(user_id)},
-
-        {
-            "$addToSet": {
-                "my_list": {
-                    "tmdb_id": tmdb_id,
-                    "media_type": media_type
+    if section == "watched":
+        # 1. store interaction
+        interactions_collection.update_one(
+            {
+                "user_id": ObjectId(user_id),
+                "tmdb_id": tmdb_id,
+                "media_type": media_type,
+            },
+            {
+                "$set": {
+                    "interaction": interaction,
+                    "created_at": datetime.now(timezone.utc),
                 }
-            }
-        }
+            },
+            upsert=True,
+        )
 
-    )
+        # 2. remove from watchlist if present
+        users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$pull": {
+                    "my_list": {
+                        "tmdb_id": tmdb_id,
+                        "media_type": media_type,
+                    }
+                }
+            },
+        )
+    else:
+        users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$addToSet": {
+                    "my_list": {
+                        "tmdb_id": tmdb_id,
+                        "media_type": media_type,
+                    }
+                }
+            },
+        )
 
     return jsonify({"status": "added"})
 
@@ -126,8 +161,6 @@ def add_to_my_list():
 # =========================
 # REMOVE
 # =========================
-
-from flask import request
 
 @bp.route("/my-list/<int:tmdb_id>/<media_type>", methods=["DELETE"])
 def remove_from_my_list(tmdb_id, media_type):

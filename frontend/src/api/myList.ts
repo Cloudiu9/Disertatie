@@ -1,7 +1,11 @@
 import type { Movie } from "../types/Movie";
 import type { TVShow } from "../types/TVShow";
 
-export type MyListItem = Movie | TVShow;
+export type MyListItem = (Movie | TVShow) & {
+  media_type: "movie" | "tv";
+  section?: "watched" | "watchlist";
+  interaction?: "seen" | "like" | "love";
+};
 
 export async function fetchMyList(): Promise<MyListItem[]> {
   const res = await fetch("/api/my-list", {
@@ -13,19 +17,23 @@ export async function fetchMyList(): Promise<MyListItem[]> {
   return res.json();
 }
 
-export async function addToMyList(tmdb_id: number, mediaType: "movie" | "tv") {
+export async function addToMyList(
+  tmdb_id: number,
+  mediaType: "movie" | "tv",
+  section: "watched" | "watchlist" = "watchlist",
+  interaction?: "seen" | "like" | "love",
+) {
   const res = await fetch("/api/my-list", {
     method: "POST",
-
     credentials: "include",
-
     headers: {
       "Content-Type": "application/json",
     },
-
     body: JSON.stringify({
       tmdb_id,
       media_type: mediaType,
+      section,
+      interaction,
     }),
   });
 

@@ -130,9 +130,11 @@ WORKING ON: User-based recommendations
           - DONE Fix My List look breaking on smaller screens (cards work fine on full res / mobile res, but break in between)
           - DONE Remove unwanted TV series (needs a reseed)
 
-TODO Split My List into "Watched" and "To Watch" 
+--DONE-- Split My List into "Watched" and "Watchlist" 
     - --DONE-- Modified backend route to support this
     - --DONE-- Modified frontend (MovieCard, MyListPage) to add a 'section' prop
+    - --DONE-- Adding item to "My List" just adds it to "Watchlist". (incorrect, there should be a choice whether to add it to Watched or Watchlist.)
+    - --DONE-- Make option to add items to "Watched" as 'seen/liked/loved' and display it correctly in Watched (same outline border from onboarding)
 
 TODO Main Movie/TV Show pages seem to double load the Hero? (ex: click on Movies/TV Shows OR refresh page, title + poster appear, new title + poster appear after ~0.5s that replaces that one) (maybe caused by an incorrent useEffect?)
 
