@@ -105,7 +105,7 @@ function MovieRow({
 
   return (
     <section className="space-y-4">
-      <h2 className="px-6 text-base sm:text-lg font-semibold text-white">
+      <h2 className="px-6 text-base sm:text-lg font-semibold text-white pt-2">
         {title}
       </h2>
 

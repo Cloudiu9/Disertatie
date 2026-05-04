@@ -5,6 +5,7 @@ type Props = {
   runtime?: number | null; // minutes for movies, avg episode runtime for TV
   seasons?: number | null; // TV only
   episodes?: number | null; // TV only
+  showTmdb?: boolean;
 };
 
 function getRatingColor(score: number) {
@@ -29,6 +30,7 @@ export default function MovieMeta({
   runtime,
   seasons,
   episodes,
+  showTmdb,
 }: Props) {
   if (year == null && rating == null) return null;
 
@@ -60,8 +62,18 @@ export default function MovieMeta({
 
   if (formattedRating) {
     metaParts.push(
-      <span key="rating" className={getRatingColor(Number(formattedRating))}>
-        {formattedRating}
+      <span key="rating" className="flex items-center gap-1.5">
+        {showTmdb && (
+          <span
+            style={{ backgroundColor: "rgba(28, 184, 216)" }}
+            className="text-white text-xs font-extrabold px-1.5 py-0.5 rounded leading-none"
+          >
+            TMDb
+          </span>
+        )}
+        <span className={getRatingColor(Number(formattedRating))}>
+          {formattedRating}
+        </span>
       </span>,
     );
   }

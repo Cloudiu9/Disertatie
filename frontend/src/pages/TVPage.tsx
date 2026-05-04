@@ -9,30 +9,38 @@ function TVPage() {
   const [genres, setGenres] = useState<string[]>([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [skeletonFading, setSkeletonFading] = useState(false);
 
   useEffect(() => {
     fetchTVGenres()
       .then(setGenres)
-      .finally(() => setLoadingGenres(false));
+      .finally(() => {
+        setSkeletonFading(true); // 1. fade out
+        setTimeout(() => setLoadingGenres(false), 400); // 2. unmount after
+      });
   }, []);
 
   return (
     <div className="space-y-12 pb-12 animate-fadeIn">
       {loadingGenres ? (
-        <>
+        <div
+          className={`transition-opacity duration-400 ${
+            skeletonFading ? "opacity-0" : "opacity-100"
+          }`}
+        >
           <SkeletonHero />
           <SkeletonRow />
           <SkeletonRow />
           <SkeletonRow />
-        </>
+        </div>
       ) : (
-        <>
+        <div className="animate-fadeIn">
           <Hero mediaType="tv" />
           <UserTVRecommendationsRow />
           <MovieRow title="Popular TV" sort="popularity" mediaType="tv" />
           <MovieRow title="Top Rated TV" sort="rating" mediaType="tv" />
           <MovieRow title="Newest TV" sort="year" mediaType="tv" />
-        </>
+        </div>
       )}
 
       <section className="space-y-4 px-4 sm:px-6">
