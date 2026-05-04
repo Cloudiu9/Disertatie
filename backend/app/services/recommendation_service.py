@@ -32,11 +32,21 @@ with open(os.path.join(PROJECT_ROOT, "models/tv_tfidf.pkl"), "rb") as f:
 def _extract_ids(raw_list: List[Any], media_type: str) -> List[int]:
     ids = []
     for item in raw_list:
-        if isinstance(item, dict):
-            if item.get("media_type") == media_type:
-                ids.append(item["tmdb_id"])
+        if isinstance(item, dict) and item.get("media_type") == media_type:
+            ids.append(item["tmdb_id"])
     return ids
 
+
+def _get_excluded_ids(user: Dict[str, Any], user_oid: ObjectId, media_type: str) -> Set[int]:
+    my_list_ids = set(_extract_ids(user.get("my_list", []), media_type))
+    watched_ids = {
+        doc["tmdb_id"]
+        for doc in interactions_collection.find(
+            {"user_id": user_oid, "media_type": media_type},
+            {"tmdb_id": 1, "_id": 0},
+        )
+    }
+    return my_list_ids | watched_ids
 
 def _compute_global_popularity(media_type: str) -> Counter:
     global_counts = Counter()
@@ -80,14 +90,15 @@ def _get_content_scores(item_ids: List[int], tfidf_model) -> Dict[int, float]:
 def _collaborative_recommendation(
     user_oid: ObjectId,
     item_ids: List[int],
+    excluded_ids: Set[int],
     media_type: str,
     collection,
     tfidf_model,
-    limit: int
+    limit: int,
 ):
     if len(item_ids) < 3:
         return list(
-            collection.find({}, {"_id": 0})
+            collection.find({"tmdb_id": {"$nin": list(excluded_ids)}}, {"_id": 0})
             .sort("popularity", -1)
             .limit(limit)
         )
@@ -127,7 +138,7 @@ def _collaborative_recommendation(
         union = len(current_set | other_set)
         similarity = weighted_intersection / union
 
-        for item_id in other_set - current_set:
+        for item_id in (other_set - current_set) - excluded_ids:
             collab_scores[item_id] = collab_scores.get(item_id, 0) + similarity
 
     # --- CONTENT SCORES ---
@@ -136,7 +147,7 @@ def _collaborative_recommendation(
     # --- MERGE + DEDUP ---
     final_scores = {}
 
-    all_ids = set(collab_scores) | set(content_scores)
+    all_ids = (set(collab_scores) | set(content_scores)) - excluded_ids
 
     for item_id in all_ids:
 
@@ -155,7 +166,7 @@ def _collaborative_recommendation(
 
     if not final_scores:
         return list(
-            collection.find({"tmdb_id": {"$nin": list(current_set)}}, {"_id": 0})
+            collection.find({"tmdb_id": {"$nin": list(excluded_ids)}}, {"_id": 0})
             .sort("popularity", -1)
             .limit(limit)
         )
@@ -183,14 +194,9 @@ def generate_user_movie_recommendations(user_id: Any, limit: int = 12):
             return []
 
         movie_ids = _extract_ids(user.get("my_list", []), "movie")
-
+        excluded_ids = _get_excluded_ids(user, user_oid, "movie")
         return _collaborative_recommendation(
-            user_oid,
-            movie_ids,
-            "movie",
-            movies_collection,
-            movie_tfidf,
-            limit
+            user_oid, movie_ids, excluded_ids, "movie", movies_collection, movie_tfidf, limit
         )
 
     except Exception:
@@ -206,14 +212,9 @@ def generate_user_tv_recommendations(user_id: Any, limit: int = 12):
             return []
 
         tv_ids = _extract_ids(user.get("my_list", []), "tv")
-
+        excluded_ids = _get_excluded_ids(user, user_oid, "tv")
         return _collaborative_recommendation(
-            user_oid,
-            tv_ids,
-            "tv",
-            tv_collection,
-            tv_tfidf,
-            limit
+            user_oid, tv_ids, excluded_ids, "tv", tv_collection, tv_tfidf, limit
         )
 
     except Exception:
