@@ -276,7 +276,13 @@ function DetailsPage({ mediaType }: Props) {
               <h1 className="text-4xl font-extrabold mb-3">{item.title}</h1>
 
               <div className="text-gray-300 mb-3">
-                <MovieMeta year={item.year} rating={item.rating} />
+                <MovieMeta
+                  year={item.year}
+                  rating={item.rating}
+                  runtime={item.runtime}
+                  seasons={"seasons" in item ? item.seasons : undefined}
+                  episodes={"episodes" in item ? item.episodes : undefined}
+                />
               </div>
 
               <div className="flex flex-wrap gap-2 mb-3">

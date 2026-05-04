@@ -9,29 +9,40 @@ function MoviesPage() {
   const [genres, setGenres] = useState<string[]>([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [skeletonFading, setSkeletonFading] = useState(false); // NEW
 
   useEffect(() => {
     fetchGenres()
       .then(setGenres)
-      .finally(() => setLoadingGenres(false));
+      .finally(() => {
+        setSkeletonFading(true); // 1. start fade-out
+        setTimeout(() => setLoadingGenres(false), 400); // 2. unmount after transition
+      });
   }, []);
+
   return (
-    <div className="space-y-12 pb-12">
+    <div className="space-y-12 pb-12 animate-fadeIn">
       {loadingGenres ? (
-        <>
+        <div
+          className={`transition-opacity duration-400 ${
+            skeletonFading ? "opacity-0" : "opacity-100"
+          }`}
+        >
           <SkeletonHero />
           <SkeletonRow />
           <SkeletonRow />
           <SkeletonRow />
-        </>
+        </div>
       ) : (
-        <>
+        <div className="animate-fadeIn">
+          {" "}
+          {/* already fades in */}
           <Hero />
           <UserMovieRecommendationsRow />
           <MovieRow title="Popular Now" sort="popularity" />
           <MovieRow title="Top Rated" sort="rating" />
           <MovieRow title="Newest Releases" sort="year" />
-        </>
+        </div>
       )}
 
       {/* Genre Selector */}
@@ -66,7 +77,7 @@ function MoviesPage() {
       </section>
 
       {/* Persistent Genre Row with fixed height container */}
-      <div className={selectedGenre ? "min-h-[400px]" : ""}>
+      <div className={selectedGenre ? "min-h-100" : ""}>
         <div
           className={`
             transition-all duration-500

@@ -30,7 +30,7 @@ with open("./artifacts/tv_index_to_tmdb.json") as f:
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client["movie_platform"]
 movies_collection = db["movies"]
-tv_collection = db["tv_shows"]
+tv_collection = db["tv"]
 
 # ------------------------
 # ROUTE

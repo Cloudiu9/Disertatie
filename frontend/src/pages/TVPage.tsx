@@ -17,7 +17,7 @@ function TVPage() {
   }, []);
 
   return (
-    <div className="space-y-12 pb-12">
+    <div className="space-y-12 pb-12 animate-fadeIn">
       {loadingGenres ? (
         <>
           <SkeletonHero />

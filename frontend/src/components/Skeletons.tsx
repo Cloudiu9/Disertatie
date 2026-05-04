@@ -1,7 +1,8 @@
 function SkeletonHero() {
-  return <div className="w-full h-[60vh] bg-gray-800 animate-pulse" />;
+  return (
+    <div className="w-full h-[60vh] bg-gray-800 animate-pulse rounded-sm" />
+  );
 }
-
 function SkeletonRow({ count = 8 }: { count?: number }) {
   return (
     <div className="space-y-4">
