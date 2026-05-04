@@ -136,6 +136,10 @@ WORKING ON: User-based recommendations
     - --DONE-- Adding item to "My List" just adds it to "Watchlist". (incorrect, there should be a choice whether to add it to Watched or Watchlist.)
     - --DONE-- Make option to add items to "Watched" as 'seen/liked/loved' and display it correctly in Watched (same outline border from onboarding)
 
+--DONE-- 'Removed from Watched' shouldn't appear if the movie isn't already Watched (should appear conditionally) (fixed this, but a small bar still appears, probably fine)
+
+TODO Main page recommender seems to be able to recommend movies that are already in Watched (ex: Across the Spider-Verse appears in both) (something might be broken on a deeper level within the recommendation system)
+
 TODO Main Movie/TV Show pages seem to double load the Hero? (ex: click on Movies/TV Shows OR refresh page, title + poster appear, new title + poster appear after ~0.5s that replaces that one) (maybe caused by an incorrent useEffect?)
 
 TODO AI Recommendations + Chatbot(?)

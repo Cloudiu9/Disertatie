@@ -266,11 +266,11 @@ function DetailsPage({ mediaType }: Props) {
           backgroundImage: backdropUrl ? `url(${backdropUrl})` : undefined,
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/20" />
+        <div className="absolute inset-0 bg-linear-to-t from-black via-black/70 to-black/20" />
 
         <div className="relative z-10 mx-auto flex h-full max-w-screen-2xl items-end px-6 pb-12">
           <div className="flex gap-8">
-            <img src={posterUrl} className="w-[220px] rounded-lg shadow-xl" />
+            <img src={posterUrl} className="w-55 rounded-lg shadow-xl" />
 
             <div className="max-w-2xl">
               <h1 className="text-4xl font-extrabold mb-3">{item.title}</h1>
@@ -340,12 +340,16 @@ function DetailsPage({ mediaType }: Props) {
 
                       <div className="h-px bg-white/10 my-1" />
 
-                      <button
-                        onClick={removeFromWatched}
-                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10"
-                      >
-                        Remove from Watched
-                      </button>
+                      {inWatched ? (
+                        <button
+                          onClick={removeFromWatched}
+                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10"
+                        >
+                          Remove from Watched
+                        </button>
+                      ) : (
+                        ""
+                      )}
                     </div>
                   )}
                 </div>
