@@ -33,6 +33,16 @@ def clean_text(text: str) -> str:
     text = re.sub(r"[^a-zA-Z0-9\s]", " ", text)
     return re.sub(r"\s+", " ", text).strip().lower()
 
+def name_token(name: str) -> str:
+    """
+    Collapse a person's name into a single token.
+    "Christopher Nolan" → "christopher_nolan"
+    Prevents first/last names matching unrelated overview words.
+    """
+    if not name:
+        return ""
+    return re.sub(r"\s+", "_", name.strip().lower())
+
 # ------------------------
 # LOAD MOVIES
 # ------------------------
@@ -46,6 +56,9 @@ movies = list(
             "overview": 1,
             "genres": 1,
             "tagline": 1,
+            "keywords": 1,
+            "cast": 1,
+            "director": 1,
         },
     )
 )
@@ -56,13 +69,19 @@ documents = []
 tmdb_ids = []
 
 for m in movies:
-    genres_clean = clean_text(" ".join(m.get("genres", [])))
+    genres_clean   = clean_text(" ".join(m.get("genres", [])))
+    keywords_clean = clean_text(" ".join(m.get("keywords", [])))
+    cast_tokens    = " ".join(name_token(n) for n in m.get("cast", []))
+    director_token = name_token(m.get("director") or "")
 
     text = " ".join([
-        clean_text(m.get("title", "")) * 2,   # repeated: exact title matches matter
+        clean_text(m.get("title", "")) * 2,   # title: short but precise
         clean_text(m.get("overview", "")),
-        clean_text(m.get("tagline", "")),      # tone/theme signal not in overview
-        (genres_clean + " ") * 3,             # primary similarity axis
+        clean_text(m.get("tagline", "")),
+        (genres_clean + " ") * 3,             # primary axis
+        (keywords_clean + " ") * 2,           # precise thematic signal
+        (cast_tokens + " ") * 2,              # actor-based similarity
+        (director_token + " ") * 3,           # strong auteur signal
     ])
     documents.append(text)
     tmdb_ids.append(int(m["tmdb_id"]))
@@ -74,8 +93,8 @@ vectorizer = TfidfVectorizer(
     ngram_range=(1, 2),
     min_df=3,
     max_df=0.8,
-    sublinear_tf=True,      # log(1+tf): dampens repetition
-    stop_words='english',   # removes "the", "a", "his", "her" etc.
+    sublinear_tf=True,
+    stop_words='english',
 )
 tfidf_matrix = vectorizer.fit_transform(documents)
 
