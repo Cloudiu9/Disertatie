@@ -44,7 +44,6 @@ const GENRE_MAP = {
     tv: ["Animation"],
   },
 
-  // NEW (fix coverage gaps)
   Documentary: {
     movie: ["Documentary"],
     tv: ["Documentary"],
@@ -102,34 +101,51 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (genres.length === 0) return;
 
+    const controller = new AbortController();
+
     const movieGenres = genres.flatMap((g) => GENRE_MAP[g].movie);
     const tvGenres = genres.flatMap((g) => GENRE_MAP[g].tv);
 
     const movieQuery = movieGenres
       .map((g) => `genres=${encodeURIComponent(g)}`)
       .join("&");
+
     const tvQuery = tvGenres
       .map((g) => `genres=${encodeURIComponent(g)}`)
       .join("&");
 
-    setMoviesLoading(true);
-    setTvLoading(true);
+    const fetchData = async () => {
+      try {
+        setMoviesLoading(true);
+        setTvLoading(true);
 
-    fetch(`/api/onboarding/movies?${movieQuery}`, { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        setMovies(data);
+        const [moviesRes, tvRes] = await Promise.all([
+          fetch(`/api/onboarding/movies?${movieQuery}`, {
+            credentials: "include",
+            signal: controller.signal,
+          }),
+          fetch(`/api/onboarding/tv?${tvQuery}`, {
+            credentials: "include",
+            signal: controller.signal,
+          }),
+        ]);
+
+        const [moviesData, tvData] = await Promise.all([
+          moviesRes.json(),
+          tvRes.json(),
+        ]);
+
+        setMovies(moviesData);
+        setTvShows(tvData);
+      } finally {
         setMoviesLoading(false);
-      })
-      .catch(() => setMoviesLoading(false));
-
-    fetch(`/api/onboarding/tv?${tvQuery}`, { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        setTvShows(data);
         setTvLoading(false);
-      })
-      .catch(() => setTvLoading(false));
+      }
+    };
+
+    fetchData();
+
+    return () => controller.abort();
   }, [genres]);
 
   function toggleMovie(id: number) {

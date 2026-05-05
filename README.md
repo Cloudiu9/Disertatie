@@ -216,11 +216,11 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## 10. Status
 
-| Component                | Status      |
-| ------------------------ | ----------- |
-| Backend API              | Complete    |
-| Frontend UI              | Complete    |
-| Authentication           | Complete    |
-| Recommendations          | Complete    |
-| Trailers                 | Complete    |
-| Advanced recommendations | In Progress |
+| Component                | Status   |
+| ------------------------ | -------- |
+| Backend API              | Complete |
+| Frontend UI              | Complete |
+| Authentication           | Complete |
+| Recommendations          | Complete |
+| Trailers                 | Complete |
+| Advanced recommendations | Complete |

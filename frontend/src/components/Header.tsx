@@ -12,7 +12,6 @@ type SearchItem = Movie & {
 const navItems = [
   { label: "Movies", href: "/" },
   { label: "TV Shows", href: "/tv" },
-  { label: "New & Popular", href: "/new" },
   { label: "My List", href: "/my-list" },
 ];
 

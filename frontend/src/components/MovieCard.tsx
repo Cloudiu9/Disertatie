@@ -1,12 +1,24 @@
 import { useNavigate } from "react-router-dom";
-import type { Movie } from "../types/Movie";
+// import type { Movie } from "../types/Movie";
+
+type CardItem = {
+  tmdb_id: number;
+  title: string;
+  poster_path?: string;
+};
 
 type Props = {
-  movie: Movie;
-  didDrag?: React.MutableRefObject<boolean>;
+  movie: CardItem;
+  didDrag?: React.RefObject<boolean>;
   variant?: "default" | "compact" | "recommendation" | "list";
-  onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
+  onRemove?: (
+    tmdbId: number,
+    mediaType: "movie" | "tv",
+    section?: "watched" | "watchlist",
+  ) => void;
   mediaType: "movie" | "tv";
+  section?: "watched" | "watchlist";
+  interaction?: "seen" | "like" | "love";
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -17,6 +29,8 @@ function MovieCard({
   variant = "default",
   onRemove,
   mediaType,
+  section,
+  interaction,
 }: Props) {
   const navigate = useNavigate();
 
@@ -33,12 +47,21 @@ function MovieCard({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onRemove?.(movie.tmdb_id, mediaType);
+    onRemove?.(movie.tmdb_id, mediaType, section);
   };
 
   const posterUrl = movie.poster_path
     ? `${IMAGE_BASE_URL}${movie.poster_path}`
     : "/placeholder-poster.png";
+
+  const ringClass =
+    interaction === "seen"
+      ? "ring-4 ring-blue-400"
+      : interaction === "like"
+        ? "ring-4 ring-yellow-400"
+        : interaction === "love"
+          ? "ring-4 ring-red-500"
+          : "";
 
   // For scroll carousels (compact/recommendation), keep fixed sizing
   // so they don't collapse inside a non-grid flex container.
@@ -87,9 +110,14 @@ function MovieCard({
         src={posterUrl}
         alt={movie.title}
         draggable={false}
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = "/placeholder-poster.png";
+        }}
         className={`
           rounded-md object-cover
           transition-transform duration-300 hover:scale-105
+          ${ringClass}
           ${sizeClasses[variant]}
         `}
       />

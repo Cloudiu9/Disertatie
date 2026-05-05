@@ -105,12 +105,13 @@ function MovieRow({
 
   return (
     <section className="space-y-4">
-      <h2 className="px-6 text-base sm:text-lg font-semibold text-white">
+      <h2 className="px-6 text-base sm:text-lg font-semibold text-white pt-2">
         {title}
       </h2>
 
       <div
         ref={drag.ref as React.RefObject<HTMLDivElement>}
+        // eslint-disable-next-line react-hooks/refs
         {...drag.handlers}
         className="
           flex gap-3 sm:gap-4 px-4 sm:px-6
