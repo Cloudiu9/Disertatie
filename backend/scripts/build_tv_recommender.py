@@ -12,7 +12,7 @@ load_dotenv()
 
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client["movie_platform"]
-tv_collection = db["tv_shows"]
+tv_collection = db["tv"]
 
 # ------------------------
 # PATHS

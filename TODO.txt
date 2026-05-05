@@ -140,6 +140,6 @@ WORKING ON: User-based recommendations
 
 --DONE-- Main Movie/TV Show pages seem to double load the Hero? (ex: click on Movies/TV Shows OR refresh page, title + poster appear, new title + poster appear after ~0.5s that replaces that one) (maybe caused by an incorrent useEffect?)
 
-TODO Main page recommender seems to be able to recommend movies that are already in Watched (ex: Across the Spider-Verse appears in both) (something might be broken on a deeper level within the recommendation system)
+--DONE-- Main page recommender seems to be able to recommend movies that are already in Watched (ex: Across the Spider-Verse appears in both) (something might be broken on a deeper level within the recommendation system)
 
 TODO AI Recommendations + Chatbot(?)
