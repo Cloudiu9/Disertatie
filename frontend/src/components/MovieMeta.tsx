@@ -63,6 +63,10 @@ export default function MovieMeta({
   if (formattedRating) {
     metaParts.push(
       <span key="rating" className="flex items-center gap-1.5">
+        <span className={getRatingColor(Number(formattedRating))}>
+          {formattedRating}
+        </span>
+
         {showTmdb && (
           <span
             style={{ backgroundColor: "rgba(28, 184, 216)" }}
@@ -71,9 +75,6 @@ export default function MovieMeta({
             TMDb
           </span>
         )}
-        <span className={getRatingColor(Number(formattedRating))}>
-          {formattedRating}
-        </span>
       </span>,
     );
   }
