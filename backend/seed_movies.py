@@ -31,7 +31,7 @@ EXCLUDED_TITLES = {
     "fate/kaleid liner prisma☆illya: dance at the sports festival!",
     "fate/kaleid liner prisma☆illya 2wei!: magical girl in hot springs inn",
     "les inshortables, vol. 1", "play time", "high art", "emmanuelle",
-    "love exposure", "9 songs", "dreamgirls", "hot girls wanted"
+    "love exposure", "9 songs", "dreamgirls", "hot girls wanted", "Nymphomaniac: Vol. II", "Nymphomaniac: Vol. I", "Carne", "Melissa P."
 }
 
 def is_excluded(title: str) -> bool:
