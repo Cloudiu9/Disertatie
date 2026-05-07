@@ -388,6 +388,7 @@ function DetailsPage({ mediaType }: Props) {
             disableFetch
             mediaType={mediaType}
             variant="recommendation"
+            showExplanation={true}
           />
         )}
       </div>

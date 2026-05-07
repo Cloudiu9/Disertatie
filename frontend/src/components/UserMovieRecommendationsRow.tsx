@@ -48,6 +48,8 @@ export default function UserMovieRecommendationsRow() {
                 movie={movie}
                 didDrag={drag.didDrag}
                 mediaType="movie"
+                variant="recommendation"
+                showExplanation={true}
               />
             ))}
       </div>

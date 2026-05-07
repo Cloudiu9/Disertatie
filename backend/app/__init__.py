@@ -27,4 +27,7 @@ def create_app():
     from routes.onboarding import bp as onboarding_bp
     app.register_blueprint(onboarding_bp)
 
+    from routes.explain import bp as explain_bp
+    app.register_blueprint(explain_bp)
+
     return app

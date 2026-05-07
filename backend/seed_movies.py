@@ -32,11 +32,12 @@ EXCLUDED_TITLES = {
     "fate/kaleid liner prisma☆illya 2wei!: magical girl in hot springs inn",
     "les inshortables, vol. 1", "play time", "high art", "emmanuelle",
     "love exposure", "9 songs", "dreamgirls", "hot girls wanted",
-    "Nymphomaniac: Vol. II", "Nymphomaniac: Vol. I", "Carne", "Melissa P."
+    "nymphomaniac: vol. ii", "nymphomaniac: vol. i", "carne", "melissa p."
 }
 
 def is_excluded(title: str) -> bool:
-    return any(excl in title.lower().strip() for excl in EXCLUDED_TITLES)
+    normalized_title = title.lower().strip()
+    return any(excl in normalized_title for excl in EXCLUDED_TITLES)
 
 # ------------------------
 # SESSION WITH RETRY
