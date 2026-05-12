@@ -73,7 +73,7 @@ function TVPage() {
         </div>
       </section>
 
-      <div className={selectedGenre ? "min-h-[400px]" : ""}>
+      <div className={selectedGenre ? "min-h-100" : ""}>
         <div
           className={`
             transition-all duration-500

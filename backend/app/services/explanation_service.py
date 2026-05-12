@@ -39,11 +39,10 @@ def _get_user_top_items(user_oid: ObjectId, media_type: str, limit: int = 5) -> 
         return []
 
     collection = movies_collection if media_type == "movie" else tv_collection
-    name_field = "title" if media_type == "movie" else "name"
 
     items = list(collection.find(
         {"tmdb_id": {"$in": top_ids}},
-        {"_id": 0, "tmdb_id": 1, name_field: 1, "genres": 1, "keywords": 1}
+        {"_id": 0, "tmdb_id": 1, "title": 1, "name": 1, "genres": 1, "keywords": 1}
     ))
 
     interaction_map = {i["tmdb_id"]: i.get("interaction", "seen") for i in interactions}
@@ -64,16 +63,15 @@ def _find_source_items(target_tmdb_id: int, user_item_ids: list, tfidf_map: dict
     return [item_id for item_id, _ in scored[:3]]
 
 
-def _build_prompt(target: dict, source_items: list, media_type: str) -> str:
-    name_field = "title" if media_type == "movie" else "name"
-    target_name = target.get(name_field, "this title")
+def _build_prompt(target: dict, source_items: list) -> str:
+    target_name = target.get("name") or target.get("title") or "this title"
     target_genres = ", ".join(target.get("genres", [])) or "unknown genre"
     target_keywords = ", ".join(target.get("keywords", [])[:5]) or "none"
 
     sources_text = ""
     for item in source_items:
         label = item.get("interaction", "seen")
-        name = item.get(name_field, "unknown")
+        name = item.get("name") or item.get("title") or "unknown"
         genres = ", ".join(item.get("genres", []))
         sources_text += f'  - "{name}" ({label}) — genres: {genres}\n'
 
@@ -107,11 +105,10 @@ def generate_explanation(user_id: str, tmdb_id: int, media_type: str) -> str:
         user_oid = ObjectId(user_id)
         tfidf_map = movie_tfidf if media_type == "movie" else tv_tfidf
         collection = movies_collection if media_type == "movie" else tv_collection
-        name_field = "title" if media_type == "movie" else "name"
 
         target = collection.find_one(
             {"tmdb_id": tmdb_id},
-            {"_id": 0, name_field: 1, "genres": 1, "keywords": 1}
+            {"_id": 0, "title": 1, "name": 1, "genres": 1, "keywords": 1}
         )
         if not target:
             return "Recommended based on your taste profile."
@@ -121,7 +118,7 @@ def generate_explanation(user_id: str, tmdb_id: int, media_type: str) -> str:
         source_ids = _find_source_items(tmdb_id, user_item_ids, tfidf_map)
         source_items = [item for item in user_items if item["tmdb_id"] in source_ids]
 
-        prompt = _build_prompt(target, source_items, media_type)
+        prompt = _build_prompt(target, source_items)
 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",

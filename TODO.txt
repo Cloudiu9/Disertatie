@@ -142,4 +142,8 @@ WORKING ON: User-based recommendations
 
 --DONE-- Main page recommender seems to be able to recommend movies that are already in Watched (ex: Across the Spider-Verse appears in both) (something might be broken on a deeper level within the recommendation system)
 
-TODO AI Recommendations + Chatbot(?)
+--DONE-- AI Recommendations + Chatbot(?)
+    - Added AI explanations for each recommendation
+    - Added an AI chatbot where users can ask for recommendations
+
+TODO Refresh User Recommendations from Landing Pages (make them more dynamic, randomized, more recommendations, etc.)
