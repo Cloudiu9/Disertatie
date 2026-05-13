@@ -6,12 +6,13 @@ from flask_cors import CORS
 def create_app():
     app = Flask(__name__)
     CORS(
-    app,
-    supports_credentials=True,
-    origins=[
-    "http://localhost:5173",           # dev
-    os.getenv("FRONTEND_URL", "")      # prod
-])
+        app,
+        supports_credentials=True,
+        origins=[
+            "http://localhost:5173",           # dev
+            os.getenv("FRONTEND_URL", "")      # prod
+        ]
+    )
 
     from . import routes
     app.register_blueprint(routes.bp)
@@ -19,22 +20,22 @@ def create_app():
     from .my_list_routes import bp as my_list_bp
     app.register_blueprint(my_list_bp)
 
-    from routes.recommendations import bp as recommendations_bp
+    from ..routes.recommendations import bp as recommendations_bp
     app.register_blueprint(recommendations_bp)
 
-    from app.auth.auth_routes import bp as auth_bp
+    from .auth.auth_routes import bp as auth_bp
     app.register_blueprint(auth_bp)
 
-    from routes.user_recommendations import bp as user_recommendations_bp
+    from ..routes.user_recommendations import bp as user_recommendations_bp
     app.register_blueprint(user_recommendations_bp)
 
-    from routes.onboarding import bp as onboarding_bp
+    from ..routes.onboarding import bp as onboarding_bp
     app.register_blueprint(onboarding_bp)
 
-    from routes.explain import bp as explain_bp
+    from ..routes.explain import bp as explain_bp
     app.register_blueprint(explain_bp)
 
-    from routes.chat import bp as chat_bp
+    from ..routes.chat import bp as chat_bp
     app.register_blueprint(chat_bp)
 
     return app
