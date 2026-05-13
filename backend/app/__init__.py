@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_cors import CORS
 
@@ -6,8 +8,10 @@ def create_app():
     CORS(
     app,
     supports_credentials=True,
-    origins=["http://localhost:5173"]
-)
+    origins=[
+    "http://localhost:5173",           # dev
+    os.getenv("FRONTEND_URL", "")      # prod — completezi după deploy Vercel
+])
 
     from . import routes
     app.register_blueprint(routes.bp)
