@@ -10,7 +10,7 @@ def create_app():
     supports_credentials=True,
     origins=[
     "http://localhost:5173",           # dev
-    os.getenv("FRONTEND_URL", "")      # prod — completezi după deploy Vercel
+    os.getenv("FRONTEND_URL", "")      # prod
 ])
 
     from . import routes
