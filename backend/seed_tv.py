@@ -11,8 +11,8 @@ load_dotenv()
 TMDB_KEY = os.getenv("TMDB_KEY")
 
 DISCOVER_URL = "https://api.themoviedb.org/3/discover/tv"
-GENRES_URL = "https://api.themoviedb.org/3/genre/tv/list"
-DETAILS_URL = "https://api.themoviedb.org/3/tv/{}"
+GENRES_URL   = "https://api.themoviedb.org/3/genre/tv/list"
+DETAILS_URL  = "https://api.themoviedb.org/3/tv/{}"
 
 # ------------------------
 # CONFIGURATION
@@ -31,6 +31,8 @@ EXCLUDED_TITLES = {
 }
 
 def is_excluded(title: str) -> bool:
+    if not title:
+        return False
     t = title.lower().strip()
     return any(excl in t for excl in EXCLUDED_TITLES)
 
@@ -62,7 +64,7 @@ def fetch_genres():
 def fetch_discover(params):
     res = session.get(DISCOVER_URL, params={"api_key": TMDB_KEY, **params})
     res.raise_for_status()
-    return res.json()["results"]
+    return res.json().get("results", [])
 
 def fetch_details(tmdb_id):
     res = session.get(
@@ -74,13 +76,16 @@ def fetch_details(tmdb_id):
 
 def normalize(tv, details):
     runtimes = details.get("episode_run_time")
+    # TV shows use 'name', Movies use 'title'. We check both just in case.
+    title = tv.get("name") or tv.get("original_name") or details.get("name")
+    
     return {
         "tmdb_id": tv["id"],
-        "title": tv["name"],
+        "title": title,
         "year": int(tv["first_air_date"][:4]) if tv.get("first_air_date") else None,
-        "rating": tv["vote_average"],
-        "votes": tv["vote_count"],
-        "popularity": tv["popularity"],
+        "rating": tv.get("vote_average", 0),
+        "votes": tv.get("vote_count", 0),
+        "popularity": tv.get("popularity", 0),
         "genres": [g["name"] for g in details.get("genres", [])],
         "overview": details.get("overview"),
         "runtime": runtimes[0] if runtimes else None,
@@ -98,12 +103,15 @@ def normalize(tv, details):
 def add_tv(results, tv_map, seen_ids, source=""):
     candidates = []
     for tv in results:
-        if is_excluded(tv["name"]):
+        # Safety check for title/name
+        name = tv.get("name") or tv.get("original_name")
+        if not name or is_excluded(name):
             continue
-        if tv["vote_count"] < MIN_VOTE_COUNT:
+        if tv.get("vote_count", 0) < MIN_VOTE_COUNT:
             continue
         if tv["id"] in seen_ids:
             continue
+        
         seen_ids.add(tv["id"])
         candidates.append(tv)
 
@@ -122,7 +130,7 @@ def add_tv(results, tv_map, seen_ids, source=""):
                 normalized = normalize(tv, details)
                 tv_map[normalized["tmdb_id"]] = normalized
             except Exception as e:
-                print(f"  [{source}] Error processing '{tv['name']}': {e}")
+                print(f"  [{source}] Error processing '{tv.get('name', 'Unknown')}': {e}")
 
 # ------------------------
 # SEEDING STRATEGY

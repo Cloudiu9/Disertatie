@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_cors import CORS
 
@@ -6,8 +8,10 @@ def create_app():
     CORS(
     app,
     supports_credentials=True,
-    origins=["http://localhost:5173"]
-)
+    origins=[
+    "http://localhost:5173",           # dev
+    os.getenv("FRONTEND_URL", "")      # prod
+])
 
     from . import routes
     app.register_blueprint(routes.bp)
@@ -26,5 +30,11 @@ def create_app():
 
     from routes.onboarding import bp as onboarding_bp
     app.register_blueprint(onboarding_bp)
+
+    from routes.explain import bp as explain_bp
+    app.register_blueprint(explain_bp)
+
+    from routes.chat import bp as chat_bp
+    app.register_blueprint(chat_bp)
 
     return app

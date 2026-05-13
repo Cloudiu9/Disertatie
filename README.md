@@ -125,6 +125,7 @@ VITE_API_BASE=http://localhost:5000
 ```bash
 cd backend
 python seed_movies.py
+python seed_tv.py
 ```
 
 This downloads movie data, cleans it, and populates MongoDB.
@@ -134,7 +135,9 @@ This downloads movie data, cleans it, and populates MongoDB.
 > Must be re-run after every reseed.
 
 ```bash
-python scripts/build_content_recommender.py
+cd backend
+python scripts/build_movie_recommender.py
+python scripts/build_tv_recommender.py
 ```
 
 Generates the feature vectors and similarity matrices used for content-based recommendations.

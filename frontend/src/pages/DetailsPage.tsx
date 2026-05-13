@@ -12,6 +12,7 @@ import { useAuth } from "../context/AuthContext";
 
 import type { Movie } from "../types/Movie";
 import type { TVShow } from "../types/TVShow";
+import { SkeletonDetails } from "../components/Skeletons"; // add to imports
 
 import { toast } from "react-hot-toast";
 
@@ -38,6 +39,8 @@ function DetailsPage({ mediaType }: Props) {
   const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [skeletonFading, setSkeletonFading] = useState(false);
+
   const [recommendations, setRecommendations] = useState<Item[]>([]);
 
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
@@ -86,12 +89,14 @@ function DetailsPage({ mediaType }: Props) {
     if (!id) return;
 
     setLoading(true);
+    setSkeletonFading(false); // reset on navigation
 
     fetch(`${baseApi}/${id}`)
       .then((r) => r.json())
       .then((d) => {
         setItem(d);
-        setLoading(false);
+        setSkeletonFading(true); // 1. fade skeleton out
+        setTimeout(() => setLoading(false), 400); // 2. unmount after
       });
   }, [baseApi, id, mediaType]);
 
@@ -232,8 +237,12 @@ function DetailsPage({ mediaType }: Props) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        Loading...
+      <div
+        className={`transition-opacity duration-400 ${
+          skeletonFading ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <SkeletonDetails />
       </div>
     );
   }
@@ -379,6 +388,7 @@ function DetailsPage({ mediaType }: Props) {
             disableFetch
             mediaType={mediaType}
             variant="recommendation"
+            showExplanation={true}
           />
         )}
       </div>

@@ -27,6 +27,7 @@ export default function UserMovieRecommendationsRow() {
 
       <div
         ref={drag.ref as React.RefObject<HTMLDivElement>}
+        // eslint-disable-next-line react-hooks/refs
         {...drag.handlers}
         className="
           flex gap-4 px-6
@@ -39,7 +40,7 @@ export default function UserMovieRecommendationsRow() {
           ? Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className="h-[225px] w-[150px] rounded bg-gray-800 animate-pulse flex-shrink-0"
+                className="h-56.25 w-37.5 rounded bg-gray-800 animate-pulse shrink-0"
               />
             ))
           : movies.map((movie) => (
@@ -48,6 +49,8 @@ export default function UserMovieRecommendationsRow() {
                 movie={movie}
                 didDrag={drag.didDrag}
                 mediaType="movie"
+                variant="recommendation"
+                showExplanation={true}
               />
             ))}
       </div>

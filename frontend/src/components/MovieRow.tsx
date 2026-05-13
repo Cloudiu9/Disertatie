@@ -14,6 +14,7 @@ type Props = {
   disableFetch?: boolean;
   variant?: "default" | "compact" | "recommendation" | "list";
   onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
+  showExplanation?: boolean;
 };
 
 function MovieRow({
@@ -25,6 +26,7 @@ function MovieRow({
   disableFetch,
   variant,
   onRemove,
+  showExplanation = false,
 }: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(!injectedMovies);
@@ -128,6 +130,7 @@ function MovieRow({
             didDrag={drag.didDrag}
             variant={variant}
             onRemove={onRemove}
+            showExplanation={showExplanation}
           />
         ))}
 

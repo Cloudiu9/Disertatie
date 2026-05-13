@@ -11,15 +11,15 @@ load_dotenv()
 
 TMDB_KEY = os.getenv("TMDB_KEY")
 
-DISCOVER_URL = "https://api.themoviedb.org/3/discover/movie"
-GENRES_URL = "https://api.themoviedb.org/3/genre/movie/list"
-MOVIE_DETAILS_URL = "https://api.themoviedb.org/3/movie/{}"
+DISCOVER_URL       = "https://api.themoviedb.org/3/discover/movie"
+GENRES_URL         = "https://api.themoviedb.org/3/genre/movie/list"
+MOVIE_DETAILS_URL  = "https://api.themoviedb.org/3/movie/{}"
 
 # ------------------------
 # CONFIGURATION
 # ------------------------
 MIN_VOTE_COUNT = int(os.getenv("MIN_VOTE_COUNT", "300"))
-MAX_WORKERS = 8  # Parallel detail fetches
+MAX_WORKERS = 8
 
 # ------------------------
 # EXCLUSIONS
@@ -31,15 +31,16 @@ EXCLUDED_TITLES = {
     "fate/kaleid liner prisma☆illya: dance at the sports festival!",
     "fate/kaleid liner prisma☆illya 2wei!: magical girl in hot springs inn",
     "les inshortables, vol. 1", "play time", "high art", "emmanuelle",
-    "love exposure", "9 songs", "dreamgirls", "hot girls wanted"
+    "love exposure", "9 songs", "dreamgirls", "hot girls wanted",
+    "nymphomaniac: vol. ii", "nymphomaniac: vol. i", "carne", "melissa p."
 }
 
 def is_excluded(title: str) -> bool:
-    t = title.lower().strip()
-    return any(excl in t for excl in EXCLUDED_TITLES)
+    normalized_title = title.lower().strip()
+    return any(excl in normalized_title for excl in EXCLUDED_TITLES)
 
 # ------------------------
-# SESSION WITH RETRY LOGIC
+# SESSION WITH RETRY
 # ------------------------
 def get_session():
     session = requests.Session()
@@ -71,12 +72,38 @@ def fetch_discover(params):
 def fetch_movie_details(tmdb_id):
     res = session.get(
         MOVIE_DETAILS_URL.format(tmdb_id),
-        params={"api_key": TMDB_KEY, "language": "en-US"}
+        params={
+            "api_key": TMDB_KEY,
+            "language": "en-US",
+            "append_to_response": "keywords,credits",  # bundled — no extra calls
+        }
     )
     res.raise_for_status()
     return res.json()
 
 def normalize_movie(movie, details):
+    # keywords → top 8, TMDB-ranked by relevance
+    keywords = [
+        kw["name"]
+        for kw in details.get("keywords", {}).get("keywords", [])[:8]
+    ]
+
+    # cast → top 6 billed actors
+    cast = [
+        member["name"]
+        for member in details.get("credits", {}).get("cast", [])[:6]
+    ]
+
+    # director → first listed (handles co-directors gracefully)
+    director = next(
+        (
+            member["name"]
+            for member in details.get("credits", {}).get("crew", [])
+            if member.get("job") == "Director"
+        ),
+        None,
+    )
+
     return {
         "tmdb_id": movie["id"],
         "title": movie["title"],
@@ -91,6 +118,9 @@ def normalize_movie(movie, details):
         "backdrop_path": details.get("backdrop_path"),
         "original_language": details.get("original_language"),
         "tagline": details.get("tagline"),
+        "keywords": keywords,
+        "cast": cast,
+        "director": director,
     }
 
 # ------------------------
@@ -137,9 +167,6 @@ def seed_movies():
     movies_map = {}
     seen_ids = set()
 
-    # ------------------------
-    # A. HIGH-QUALITY MAINSTREAM
-    # ------------------------
     print("\n[A] Fetching high-quality mainstream movies...")
     for page in range(1, 41):
         print(f"  Page {page}/40")
@@ -147,12 +174,9 @@ def seed_movies():
             "language": "en-US",
             "sort_by": "vote_average.desc",
             "vote_count.gte": 2000,
-            "page": page
+            "page": page,
         }), movies_map, seen_ids, "High-Quality")
 
-    # ------------------------
-    # A2. MAINSTREAM BLOCKBUSTERS (POPULARITY-FIRST)
-    # ------------------------
     print("\n[A2] Fetching mainstream blockbusters...")
     for page in range(1, 41):
         print(f"  Page {page}/40")
@@ -160,12 +184,9 @@ def seed_movies():
             "language": "en-US",
             "sort_by": "popularity.desc",
             "vote_count.gte": 1000,
-            "page": page
+            "page": page,
         }), movies_map, seen_ids, "Blockbusters")
 
-    # ------------------------
-    # B. GENRE DIVERSITY
-    # ------------------------
     print("\n[B] Fetching genre diversity...")
     for genre_id, genre_name in genres.items():
         print(f"  Genre: {genre_name}")
@@ -175,12 +196,9 @@ def seed_movies():
                 "with_genres": genre_id,
                 "sort_by": "popularity.desc",
                 "vote_count.gte": 500,
-                "page": page
+                "page": page,
             }), movies_map, seen_ids, f"Genre-{genre_name}")
 
-    # ------------------------
-    # C. OLDER CLASSICS
-    # ------------------------
     print("\n[C] Fetching older classics...")
     for page in range(1, 31):
         print(f"  Page {page}/30")
@@ -189,12 +207,9 @@ def seed_movies():
             "primary_release_date.lte": "2005-12-31",
             "sort_by": "vote_average.desc",
             "vote_count.gte": 800,
-            "page": page
+            "page": page,
         }), movies_map, seen_ids, "Classics")
 
-    # ------------------------
-    # D. INTERNATIONAL CINEMA
-    # ------------------------
     print("\n[D] Fetching international cinema...")
     for lang in ["fr", "es", "de", "it", "ja", "ko"]:
         print(f"  Language: {lang}")
@@ -203,12 +218,9 @@ def seed_movies():
                 "sort_by": "vote_average.desc",
                 "vote_count.gte": 500,
                 "with_original_language": lang,
-                "page": page
+                "page": page,
             }), movies_map, seen_ids, f"Intl-{lang}")
 
-    # ------------------------
-    # ATOMIC INSERT VIA TEMP COLLECTION
-    # ------------------------
     print(f"\n[FINAL] Inserting {len(movies_map)} unique movies...")
     if movies_map:
         temp_collection.insert_many(list(movies_map.values()), ordered=False)

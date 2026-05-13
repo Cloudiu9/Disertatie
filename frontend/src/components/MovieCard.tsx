@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-// import type { Movie } from "../types/Movie";
+import { useState } from "react";
+import { fetchExplanation } from "../api/explanations";
 
 type CardItem = {
   tmdb_id: number;
@@ -19,6 +20,7 @@ type Props = {
   mediaType: "movie" | "tv";
   section?: "watched" | "watchlist";
   interaction?: "seen" | "like" | "love";
+  showExplanation?: boolean; // only true when rendered inside a recommendations row
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -31,8 +33,12 @@ function MovieCard({
   mediaType,
   section,
   interaction,
+  showExplanation = false,
 }: Props) {
   const navigate = useNavigate();
+
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
 
   const handleClick = (e: React.MouseEvent) => {
     if (didDrag?.current) {
@@ -50,6 +56,20 @@ function MovieCard({
     onRemove?.(movie.tmdb_id, mediaType, section);
   };
 
+  const handleWhyClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // don't navigate to detail page
+    if (explanation || loadingExplanation) return;
+    setLoadingExplanation(true);
+    try {
+      const text = await fetchExplanation(movie.tmdb_id, mediaType);
+      setExplanation(text);
+    } catch {
+      setExplanation("Recommended based on your taste profile.");
+    } finally {
+      setLoadingExplanation(false);
+    }
+  };
+
   const posterUrl = movie.poster_path
     ? `${IMAGE_BASE_URL}${movie.poster_path}`
     : "/placeholder-poster.png";
@@ -63,9 +83,6 @@ function MovieCard({
           ? "ring-4 ring-red-500"
           : "";
 
-  // For scroll carousels (compact/recommendation), keep fixed sizing
-  // so they don't collapse inside a non-grid flex container.
-  // For "default" (used in grids), go fully fluid.
   const sizeClasses = {
     default:
       "h-[200px] w-[130px] sm:h-[225px] sm:w-[150px] lg:h-[315px] lg:w-[230px]",
@@ -87,18 +104,17 @@ function MovieCard({
     <div
       onClick={handleClick}
       draggable={false}
-      className={`relative cursor-pointer select-none ${containerWidth}`}
+      className={`group relative cursor-pointer select-none ${containerWidth}`}
     >
+      {/* Remove button */}
       {onRemove && (
         <button
           onClick={handleRemove}
           className="
             absolute top-1 right-3
             bg-black/70 hover:bg-black
-            text-white
-            rounded-full
-            w-7 h-7
-            text-sm
+            text-white rounded-full
+            w-7 h-7 text-sm
             flex items-center justify-center
             z-10
           "
@@ -106,6 +122,8 @@ function MovieCard({
           ×
         </button>
       )}
+
+      {/* Poster */}
       <img
         src={posterUrl}
         alt={movie.title}
@@ -121,6 +139,48 @@ function MovieCard({
           ${sizeClasses[variant]}
         `}
       />
+
+      {/* Why? overlay — only on recommendation cards */}
+      {showExplanation && variant === "recommendation" && (
+        <div
+          className="
+            absolute bottom-0 left-0 right-0
+            rounded-b-md
+            bg-gradient-to-t from-black/90 via-black/60 to-transparent
+            px-2 py-2
+            flex flex-col items-center justify-end
+            opacity-0 group-hover:opacity-100
+            transition-opacity duration-200
+            pointer-events-none group-hover:pointer-events-auto
+          "
+          style={{ minHeight: "40%" }}
+        >
+          {explanation ? (
+            // Explanation text — shown after fetch
+            <p className="text-white text-[10px] lg:text-xs leading-snug text-center">
+              {explanation}
+            </p>
+          ) : (
+            // Why? button — shown before fetch
+            <button
+              onClick={handleWhyClick}
+              disabled={loadingExplanation}
+              className="
+                mt-auto
+                bg-white/15 hover:bg-white/25
+                text-white text-[10px] lg:text-xs font-medium
+                px-2 py-1 rounded-full
+                border border-white/30
+                transition-colors duration-150
+                disabled:opacity-50 disabled:cursor-not-allowed
+                whitespace-nowrap
+              "
+            >
+              {loadingExplanation ? "Thinking…" : "✦ Why this?"}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

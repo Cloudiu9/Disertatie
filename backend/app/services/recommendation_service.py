@@ -10,6 +10,7 @@ from typing import Any, List, Set, Dict
 import traceback
 import pickle
 import os
+import math
 
 
 INTERACTION_WEIGHTS = {
@@ -27,6 +28,10 @@ with open(os.path.join(PROJECT_ROOT, "models/movie_tfidf.pkl"), "rb") as f:
 
 with open(os.path.join(PROJECT_ROOT, "models/tv_tfidf.pkl"), "rb") as f:
     tv_tfidf = pickle.load(f)
+
+
+# --- POPULARITY CACHE (module-level, lives for the Flask process lifetime) ---
+_popularity_cache: Dict[str, Counter] = {}
 
 
 def _extract_ids(raw_list: List[Any], media_type: str) -> List[int]:
@@ -48,42 +53,59 @@ def _get_excluded_ids(user: Dict[str, Any], user_oid: ObjectId, media_type: str)
     }
     return my_list_ids | watched_ids
 
-def _compute_global_popularity(media_type: str) -> Counter:
-    global_counts = Counter()
 
+def _compute_global_popularity(media_type: str) -> Counter:
+    if media_type in _popularity_cache:
+        return _popularity_cache[media_type]
+
+    global_counts = Counter()
     for u in users_collection.find({}, {"my_list": 1}):
         for item in u.get("my_list", []) or []:
             if item.get("media_type") == media_type:
                 global_counts[item["tmdb_id"]] += 1
 
+    _popularity_cache[media_type] = global_counts
     return global_counts
 
 
-def _get_user_interactions(user_oid: ObjectId, media_type: str):
+def _get_user_interactions(user_oid: ObjectId, media_type: str) -> Dict[int, int]:
     interactions = interactions_collection.find({
         "user_id": user_oid,
         "media_type": media_type
     })
-
     return {
         i["tmdb_id"]: INTERACTION_WEIGHTS.get(i["interaction"], 1)
         for i in interactions
     }
 
 
-# --- CONTENT SCORING ---
-def _get_content_scores(item_ids: List[int], tfidf_model) -> Dict[int, float]:
+def _normalize(scores: Dict[int, float]) -> Dict[int, float]:
+    """Min-max normalize a score dictionary to [0, 1]."""
+    if not scores:
+        return scores
+    min_val = min(scores.values())
+    max_val = max(scores.values())
+    if max_val == min_val:
+        return {k: 1.0 for k in scores}
+    return {k: (v - min_val) / (max_val - min_val) for k, v in scores.items()}
+
+
+def _get_content_scores(
+    item_ids: List[int],
+    user_weights: Dict[int, int],
+    tfidf_model
+) -> Dict[int, float]:
     """
-    Aggregate TF-IDF similarity scores across user's items
+    Aggregate TF-IDF similarity scores across user's items,
+    weighted by how strongly the user interacted with each source item.
+    Items similar to a 'loved' movie score 3x higher than a 'seen' one.
     """
     scores = {}
-
     for item_id in item_ids:
         similar = tfidf_model.get(item_id, [])
-
+        interaction_weight = user_weights.get(item_id, 1)
         for sim_id, sim_score in similar:
-            scores[sim_id] = scores.get(sim_id, 0) + sim_score
-
+            scores[sim_id] = scores.get(sim_id, 0) + sim_score * interaction_weight
     return scores
 
 
@@ -109,6 +131,7 @@ def _collaborative_recommendation(
 
     # --- COLLABORATIVE SCORES ---
     collab_scores = {}
+    n_similar_users = 0
 
     similar_users = users_collection.find(
         {
@@ -120,7 +143,6 @@ def _collaborative_recommendation(
     )
 
     for user in similar_users:
-
         other_set = {
             item["tmdb_id"]
             for item in user.get("my_list", [])
@@ -131,36 +153,40 @@ def _collaborative_recommendation(
         if not intersection:
             continue
 
-        weighted_intersection = sum(
-            current_weights.get(i, 1) for i in intersection
-        )
-
-        union = len(current_set | other_set)
-        similarity = weighted_intersection / union
+        # Plain Jaccard — consistent on both sides
+        similarity = len(intersection) / len(current_set | other_set)
+        n_similar_users += 1
 
         for item_id in (other_set - current_set) - excluded_ids:
             collab_scores[item_id] = collab_scores.get(item_id, 0) + similarity
 
-    # --- CONTENT SCORES ---
-    content_scores = _get_content_scores(item_ids, tfidf_model)
+    # --- CONTENT SCORES (interaction-weighted) ---
+    content_scores = _get_content_scores(item_ids, current_weights, tfidf_model)
 
-    # --- MERGE + DEDUP ---
+    # --- NORMALIZE INDEPENDENTLY before merging ---
+    collab_scores = _normalize(collab_scores)
+    content_scores = _normalize(content_scores)
+
+    # --- ADAPTIVE WEIGHTS ---
+    # With few users collab signal is weak, so we lean on content.
+    # collab_weight grows toward 0.6 as the user base fills out.
+    collab_weight = min(0.6, n_similar_users / 20)
+    content_weight = 1.0 - collab_weight
+
+    # --- MERGE + RANK ---
     final_scores = {}
-
     all_ids = (set(collab_scores) | set(content_scores)) - excluded_ids
 
     for item_id in all_ids:
-
         collab = collab_scores.get(item_id, 0)
         content = content_scores.get(item_id, 0)
-        interaction = current_weights.get(item_id, 1)
         popularity = global_counts.get(item_id, 1)
 
+        # log1p gives a gentle penalty: pop=1→÷1.69, pop=10→÷3.4, pop=100→÷5.6
         score = (
-            collab * 0.5 +
-            content * 0.2 +
-            interaction * 0.3
-        ) / (1 + popularity)
+            collab * collab_weight +
+            content * content_weight
+        ) / (1 + math.log1p(popularity))
 
         final_scores[item_id] = score
 

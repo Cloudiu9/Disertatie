@@ -10,6 +10,7 @@ import ProfilePage from "./pages/ProfilePage";
 import TVPage from "./pages/TVPage";
 import DetailsPage from "./pages/DetailsPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import ChatWidget from "./components/ChatWidget";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Routes>
+        <ChatWidget />
       </BrowserRouter>
     </AuthProvider>
   );

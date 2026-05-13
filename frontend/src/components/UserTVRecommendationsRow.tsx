@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { fetchTVRecommendations } from "../api/user_recommendations";
+import type { Movie } from "../types/Movie";
 import MovieCard from "./MovieCard";
 import { useDragScroll } from "../hooks/useDragScroll";
 
 export default function UserTVRecommendationsRow() {
-  const [shows, setShows] = useState([]);
+  const [shows, setShows] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
-
   const drag = useDragScroll();
 
   useEffect(() => {
@@ -23,9 +23,9 @@ export default function UserTVRecommendationsRow() {
       <h2 className="px-6 text-lg font-semibold text-white">
         Recommended TV Shows For You
       </h2>
-
       <div
         ref={drag.ref as React.RefObject<HTMLDivElement>}
+        // eslint-disable-next-line react-hooks/refs
         {...drag.handlers}
         className="
           flex gap-4 px-6
@@ -38,15 +38,17 @@ export default function UserTVRecommendationsRow() {
           ? Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className="h-[225px] w-[150px] rounded bg-gray-800 animate-pulse flex-shrink-0"
+                className="h-56.25 w-37.5 rounded bg-gray-800 animate-pulse shrink-0"
               />
             ))
-          : shows.map((show: any) => (
+          : shows.map((show) => (
               <MovieCard
                 key={show.tmdb_id}
                 movie={show}
                 didDrag={drag.didDrag}
                 mediaType="tv"
+                variant="recommendation"
+                showExplanation={true}
               />
             ))}
       </div>

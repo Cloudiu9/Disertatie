@@ -5,7 +5,6 @@ from flask import Blueprint, jsonify
 from sklearn.metrics.pairwise import cosine_similarity
 from pymongo import MongoClient
 import os
-from dotenv import load_dotenv
 
 bp = Blueprint("recommendations", __name__)
 
@@ -18,11 +17,17 @@ tfidf_matrix = joblib.load("./artifacts/tfidf_matrix.joblib")
 with open("./artifacts/tfidf_index_to_tmdb.json") as f:
     index_to_tmdb = json.load(f)
 
+# O(1) lookup map
+tmdb_to_index = {tmdb: i for i, tmdb in enumerate(index_to_tmdb)}
+
 tv_vectorizer = joblib.load("./artifacts/tv_vectorizer.joblib")
 tv_tfidf_matrix = joblib.load("./artifacts/tv_tfidf_matrix.joblib")
 
 with open("./artifacts/tv_index_to_tmdb.json") as f:
     tv_index_to_tmdb = json.load(f)
+
+# O(1) lookup map (TV)
+tv_tmdb_to_index = {tmdb: i for i, tmdb in enumerate(tv_index_to_tmdb)}
 
 # ------------------------
 # DB
@@ -33,14 +38,14 @@ movies_collection = db["movies"]
 tv_collection = db["tv"]
 
 # ------------------------
-# ROUTE
+# MOVIE RECOMMENDATIONS
 # ------------------------
-@bp.route("/api/recommendations/movie/<int:tmdb_id>")
+@bp.route("/api/recommendations/movie/<int:tmdb_id>", methods=["GET"])
 def recommend_for_movie(tmdb_id):
-    if tmdb_id not in index_to_tmdb:
-        return jsonify([])
 
-    idx = index_to_tmdb.index(tmdb_id)
+    idx = tmdb_to_index.get(tmdb_id)
+    if idx is None:
+        return jsonify({"error": "TMDB id not found in model"}), 404
 
     similarities = cosine_similarity(
         tfidf_matrix[idx], tfidf_matrix
@@ -55,31 +60,37 @@ def recommend_for_movie(tmdb_id):
         index_to_tmdb[i]: float(similarities[i])
         for i in top_indices
     }
+
     recommended_tmdb_ids = list(tmdb_with_scores.keys())
 
-
-    movies = list(
-        movies_collection.find(
-            {"tmdb_id": {"$in": recommended_tmdb_ids}},
-            {"_id": 0},
-        )
+    # Fetch once
+    movies_cursor = movies_collection.find(
+        {"tmdb_id": {"$in": recommended_tmdb_ids}},
+        {"_id": 0},
     )
 
-    for movie in movies:
-        movie["similarity"] = round(tmdb_with_scores[movie["tmdb_id"]], 3)
+    # Map for deterministic ordering
+    movies_map = {m["tmdb_id"]: m for m in movies_cursor}
 
-    # Preserve ranking order
-    movies.sort(key=lambda m: m["similarity"], reverse=True)
+    movies = []
+    for mid in recommended_tmdb_ids:
+        if mid in movies_map:
+            movie = movies_map[mid]
+            movie["similarity"] = round(tmdb_with_scores[mid], 3)
+            movies.append(movie)
 
     return jsonify(movies)
 
-@bp.route("/api/recommendations/tv/<int:tmdb_id>")
+
+# ------------------------
+# TV RECOMMENDATIONS
+# ------------------------
+@bp.route("/api/recommendations/tv/<int:tmdb_id>", methods=["GET"])
 def recommend_for_tv(tmdb_id):
 
-    if tmdb_id not in tv_index_to_tmdb:
-        return jsonify([])
-
-    idx = tv_index_to_tmdb.index(tmdb_id)
+    idx = tv_tmdb_to_index.get(tmdb_id)
+    if idx is None:
+        return jsonify({"error": "TMDB id not found in model"}), 404
 
     similarities = cosine_similarity(
         tv_tfidf_matrix[idx], tv_tfidf_matrix
@@ -96,16 +107,18 @@ def recommend_for_tv(tmdb_id):
 
     recommended_tmdb_ids = list(tmdb_with_scores.keys())
 
-    shows = list(
-        tv_collection.find(
-            {"tmdb_id": {"$in": recommended_tmdb_ids}},
-            {"_id": 0},
-        )
+    shows_cursor = tv_collection.find(
+        {"tmdb_id": {"$in": recommended_tmdb_ids}},
+        {"_id": 0},
     )
 
-    for show in shows:
-        show["similarity"] = round(tmdb_with_scores[show["tmdb_id"]], 3)
+    shows_map = {s["tmdb_id"]: s for s in shows_cursor}
 
-    shows.sort(key=lambda m: m["similarity"], reverse=True)
+    shows = []
+    for tid in recommended_tmdb_ids:
+        if tid in shows_map:
+            show = shows_map[tid]
+            show["similarity"] = round(tmdb_with_scores[tid], 3)
+            shows.append(show)
 
     return jsonify(shows)
