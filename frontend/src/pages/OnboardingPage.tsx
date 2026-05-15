@@ -217,7 +217,7 @@ export default function OnboardingPage() {
             color: "bg-blue-400",
             label: "1 click",
             desc: "Seen it",
-            myList: false,
+            myList: true,
           },
           {
             color: "bg-yellow-400",
