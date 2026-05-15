@@ -389,6 +389,8 @@ function DetailsPage({ mediaType }: Props) {
             mediaType={mediaType}
             variant="recommendation"
             showExplanation={true}
+            sourceTmdbId={item.tmdb_id}
+            sourceMediaType={mediaType}
           />
         )}
       </div>

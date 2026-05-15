@@ -21,6 +21,8 @@ type Props = {
   section?: "watched" | "watchlist";
   interaction?: "seen" | "like" | "love";
   showExplanation?: boolean; // only true when rendered inside a recommendations row
+  sourceTmdbId?: number;
+  sourceMediaType?: "movie" | "tv";
 };
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -34,6 +36,8 @@ function MovieCard({
   section,
   interaction,
   showExplanation = false,
+  sourceTmdbId,
+  sourceMediaType,
 }: Props) {
   const navigate = useNavigate();
 
@@ -56,12 +60,18 @@ function MovieCard({
     onRemove?.(movie.tmdb_id, mediaType, section);
   };
 
+  // AI Explanation
   const handleWhyClick = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // don't navigate to detail page
+    e.stopPropagation();
     if (explanation || loadingExplanation) return;
     setLoadingExplanation(true);
     try {
-      const text = await fetchExplanation(movie.tmdb_id, mediaType);
+      const text = await fetchExplanation(
+        movie.tmdb_id,
+        mediaType,
+        sourceTmdbId, // undefined on recommendation rows → user-based
+        sourceMediaType, // undefined on recommendation rows → user-based
+      );
       setExplanation(text);
     } catch {
       setExplanation("Recommended based on your taste profile.");
@@ -146,7 +156,7 @@ function MovieCard({
           className="
             absolute bottom-0 left-0 right-0
             rounded-b-md
-            bg-gradient-to-t from-black/90 via-black/60 to-transparent
+            bg-linear-to-t from-black/90 via-black/60 to-transparent
             px-2 py-2
             flex flex-col items-center justify-end
             opacity-0 group-hover:opacity-100

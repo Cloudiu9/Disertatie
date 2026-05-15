@@ -2,12 +2,13 @@ import os
 import pickle
 from groq import Groq
 from bson import ObjectId
-from app.db import users_collection, movies_collection, tv_collection, interactions_collection
+from app.db import movies_collection, tv_collection, interactions_collection
 
 # ------------------------
-# CONFIGURE GEMINI
+# GROQ CLIENT
 # ------------------------
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
 # ------------------------
 # LOAD TF-IDF MAPS
 # ------------------------
@@ -64,6 +65,7 @@ def _find_source_items(target_tmdb_id: int, user_item_ids: list, tfidf_map: dict
 
 
 def _build_prompt(target: dict, source_items: list) -> str:
+    """Prompt for user-preference-based explanations (recommendations row)."""
     target_name = target.get("name") or target.get("title") or "this title"
     target_genres = ", ".join(target.get("genres", [])) or "unknown genre"
     target_keywords = ", ".join(target.get("keywords", [])[:5]) or "none"
@@ -96,7 +98,42 @@ Write exactly ONE sentence (max 20 words) explaining why "{target_name}" is a go
 Only output the sentence itself, nothing else."""
 
 
+def _build_item_prompt(source: dict, target: dict) -> str:
+    """
+    Prompt for item-based explanations (DetailsPage).
+    References the page item the user is currently viewing,
+    not their personal history.
+    """
+    source_name  = source.get("name") or source.get("title") or "the current title"
+    target_name  = target.get("name") or target.get("title") or "this title"
+    source_genres  = ", ".join(source.get("genres", [])) or "unknown"
+    target_genres  = ", ".join(target.get("genres", [])) or "unknown"
+    target_keywords = ", ".join(target.get("keywords", [])[:5]) or "none"
+
+    return f"""You are generating a short explanation for a movie/TV recommendation system.
+
+The user is currently viewing: "{source_name}"
+  Genres: {source_genres}
+
+They are being shown a similar title: "{target_name}"
+  Genres: {target_genres}
+  Themes/keywords: {target_keywords}
+
+Write exactly ONE sentence (max 20 words) explaining why "{target_name}" is similar to "{source_name}".
+- Be specific — mention a shared genre, theme, mood, or style
+- Sound natural, not robotic
+- Do not say "based on your history" or "our algorithm"
+- Do not use the word "recommendation"
+- Start with "Because" or a similar connector
+
+Only output the sentence itself, nothing else."""
+
+
 def generate_explanation(user_id: str, tmdb_id: int, media_type: str) -> str:
+    """
+    User-preference-based explanation.
+    Used by UserMovieRecommendationsRow and UserTVRecommendationsRow.
+    """
     cache_key = (user_id, tmdb_id, media_type)
     if cache_key in _explanation_cache:
         return _explanation_cache[cache_key]
@@ -123,14 +160,61 @@ def generate_explanation(user_id: str, tmdb_id: int, media_type: str) -> str:
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=60,   # explanations are one sentence — no need for more
+            max_tokens=60,
             temperature=0.7,
         )
         explanation = response.choices[0].message.content.strip()
-
         _explanation_cache[cache_key] = explanation
         return explanation
 
     except Exception as e:
         print(f"[Explanation] Error: {e}")
         return "Recommended based on your taste profile."
+
+
+def generate_explanation_from_item(
+    source_tmdb_id: int,
+    source_media_type: str,
+    target_tmdb_id: int,
+    target_media_type: str,
+) -> str:
+    """
+    Item-based explanation.
+    Used by DetailsPage recommendations — references the page item,
+    not the user's personal history.
+    """
+    cache_key = ("item", source_tmdb_id, target_tmdb_id, target_media_type)
+    if cache_key in _explanation_cache:
+        return _explanation_cache[cache_key]
+
+    try:
+        source_collection = movies_collection if source_media_type == "movie" else tv_collection
+        target_collection = movies_collection if target_media_type == "movie" else tv_collection
+
+        source = source_collection.find_one(
+            {"tmdb_id": source_tmdb_id},
+            {"_id": 0, "title": 1, "name": 1, "genres": 1}
+        )
+        target = target_collection.find_one(
+            {"tmdb_id": target_tmdb_id},
+            {"_id": 0, "title": 1, "name": 1, "genres": 1, "keywords": 1}
+        )
+
+        if not source or not target:
+            return "Similar themes and style make this a strong match."
+
+        prompt = _build_item_prompt(source, target)
+
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=60,
+            temperature=0.7,
+        )
+        explanation = response.choices[0].message.content.strip()
+        _explanation_cache[cache_key] = explanation
+        return explanation
+
+    except Exception as e:
+        print(f"[Explanation] Error (item-based): {e}")
+        return "Similar themes and style make this a strong match."
