@@ -15,6 +15,8 @@ type Props = {
   variant?: "default" | "compact" | "recommendation" | "list";
   onRemove?: (tmdb_id: number, mediaType: "movie" | "tv") => Promise<void>;
   showExplanation?: boolean;
+  sourceTmdbId?: number;
+  sourceMediaType?: "movie" | "tv";
 };
 
 function MovieRow({
@@ -27,6 +29,8 @@ function MovieRow({
   variant,
   onRemove,
   showExplanation = false,
+  sourceTmdbId,
+  sourceMediaType,
 }: Props) {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(!injectedMovies);
@@ -131,6 +135,8 @@ function MovieRow({
             variant={variant}
             onRemove={onRemove}
             showExplanation={showExplanation}
+            sourceTmdbId={sourceTmdbId}
+            sourceMediaType={sourceMediaType}
           />
         ))}
 

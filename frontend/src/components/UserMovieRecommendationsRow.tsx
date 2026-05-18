@@ -4,6 +4,16 @@ import type { Movie } from "../types/Movie";
 import MovieCard from "./MovieCard";
 import { useDragScroll } from "../hooks/useDragScroll";
 
+// Fisher-Yates shuffle — returns a new shuffled array, never mutates the original
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export default function UserMovieRecommendationsRow() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +22,7 @@ export default function UserMovieRecommendationsRow() {
 
   useEffect(() => {
     fetchMovieRecommendations().then((data) => {
-      setMovies(data);
+      setMovies(shuffle(data));
       setLoading(false);
     });
   }, []);
@@ -24,7 +34,6 @@ export default function UserMovieRecommendationsRow() {
       <h2 className="px-6 text-lg font-semibold text-white">
         Recommended Movies For You
       </h2>
-
       <div
         ref={drag.ref as React.RefObject<HTMLDivElement>}
         // eslint-disable-next-line react-hooks/refs
@@ -40,7 +49,7 @@ export default function UserMovieRecommendationsRow() {
           ? Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className="h-56.25 w-37.5 rounded bg-gray-800 animate-pulse shrink-0"
+                className="h-[225px] w-[150px] rounded bg-gray-800 animate-pulse flex-shrink-0"
               />
             ))
           : movies.map((movie) => (

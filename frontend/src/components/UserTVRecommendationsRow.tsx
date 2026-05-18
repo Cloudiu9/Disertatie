@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
 import { fetchTVRecommendations } from "../api/user_recommendations";
-import type { Movie } from "../types/Movie";
 import MovieCard from "./MovieCard";
 import { useDragScroll } from "../hooks/useDragScroll";
+import type { TVShow } from "../types/TVShow";
+
+// Fisher-Yates shuffle — returns a new shuffled array, never mutates the original
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 export default function UserTVRecommendationsRow() {
-  const [shows, setShows] = useState<Movie[]>([]);
+  const [shows, setShows] = useState<TVShow[]>([]);
   const [loading, setLoading] = useState(true);
   const drag = useDragScroll();
 
   useEffect(() => {
     fetchTVRecommendations().then((data) => {
-      setShows(data);
+      setShows(shuffle(data));
       setLoading(false);
     });
   }, []);
