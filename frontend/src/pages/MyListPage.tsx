@@ -180,6 +180,7 @@ function MyListPage() {
                     section="watched"
                     interaction={item.interaction}
                     onRemove={handleRemove}
+                    variant="list"
                   />
                 ))}
               </div>
@@ -200,6 +201,7 @@ function MyListPage() {
                     mediaType={item.media_type}
                     section="watchlist"
                     onRemove={handleRemove}
+                    variant="list"
                   />
                 ))}
               </div>
