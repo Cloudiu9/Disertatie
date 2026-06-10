@@ -49,7 +49,7 @@ export default function UserMovieRecommendationsRow() {
           ? Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className="h-[225px] w-[150px] rounded bg-gray-800 animate-pulse flex-shrink-0"
+                className="h-56.25 w-37.5 rounded bg-gray-800 animate-pulse shrink-0"
               />
             ))
           : movies.map((movie) => (

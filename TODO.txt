@@ -146,4 +146,6 @@ WORKING ON: User-based recommendations
     - Added AI explanations for each recommendation
     - Added an AI chatbot where users can ask for recommendations
 
-TODO Refresh User Recommendations from Landing Pages (make them more dynamic, randomized, more recommendations, etc.)
+--DONE-- Refresh User Recommendations from Landing Pages (make them more dynamic, randomized, more recommendations, etc.)
+--DONE-- Fixed responsiveness of main page (Header was out of view on laptop sizes, incomplete on mobile sizes)
+TODO Fix DetailsPage responsiveness (rework completely for mobile? seems to work well until ~650px width, then +Watchlist button becomes too large and all buttons get left out of view)

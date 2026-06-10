@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  MagnifyingGlassIcon,
+  Bars3Icon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import debounce from "lodash.debounce";
 import type { Movie } from "../types/Movie";
 import { useAuth } from "../context/AuthContext";
@@ -20,6 +24,7 @@ export default function Header() {
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -46,6 +51,15 @@ export default function Header() {
     };
     document.addEventListener("mousedown", handleMouseDown);
     return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, []);
+
+  // Close mobile menu on resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setMenuOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const doSearch = debounce(async (q: string) => {
@@ -87,9 +101,11 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 z-50 w-full bg-[#141414] shadow-md">
-      <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-6">
-        <div className="flex items-center gap-10">
-          <Link to="/" className="text-2xl font-black text-red-600">
+      {/* ── Main bar ── */}
+      <div className="flex h-16 w-full items-center justify-between px-4 sm:px-6">
+        {/* Left: logo + desktop nav */}
+        <div className="flex min-w-0 items-center gap-8">
+          <Link to="/" className="shrink-0 text-2xl font-black text-red-600">
             MOVIEFLIX
           </Link>
 
@@ -98,9 +114,7 @@ export default function Header() {
               <Link
                 key={item.label}
                 to={item.href}
-                className={`transition hover:text-white ${
-                  item.label === "My List" ? "hover:underline" : ""
-                }`}
+                className="whitespace-nowrap transition hover:text-white"
               >
                 {item.label}
               </Link>
@@ -108,7 +122,9 @@ export default function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-6 text-gray-300">
+        {/* Right: search + desktop user area + mobile hamburger */}
+        <div className="flex shrink-0 items-center gap-4 text-gray-300">
+          {/* Search */}
           <div ref={searchRef} className="relative">
             <div
               className="flex items-center gap-2"
@@ -125,13 +141,13 @@ export default function Header() {
                   value={searchQuery}
                   onChange={onChange}
                   placeholder="Search movies or TV..."
-                  className="w-48 rounded bg-black px-3 py-1 text-sm text-white placeholder-gray-400 outline-none"
+                  className="w-36 sm:w-48 rounded bg-black px-3 py-1 text-sm text-white placeholder-gray-400 outline-none"
                 />
               )}
             </div>
 
             {searchOpen && searchQuery && (
-              <div className="absolute right-0 top-10 z-50 w-80 max-h-96 overflow-y-auto rounded bg-black shadow-lg ring-1 ring-white/10">
+              <div className="absolute right-0 top-10 z-50 w-72 sm:w-80 max-h-96 overflow-y-auto rounded bg-black shadow-lg ring-1 ring-white/10">
                 {searchLoading && (
                   <div className="p-4 text-gray-400">Searching...</div>
                 )}
@@ -190,7 +206,8 @@ export default function Header() {
             )}
           </div>
 
-          <div className="relative" ref={dropdownRef}>
+          {/* Desktop user area — hidden on mobile */}
+          <div className="relative hidden md:block" ref={dropdownRef}>
             {user ? (
               <>
                 <button
@@ -205,7 +222,7 @@ export default function Header() {
                     <Link
                       to="/profile"
                       onClick={() => setOpen(false)}
-                      className="block px-4 py-2 hover:bg-zinc-700"
+                      className="block px-4 py-2 text-sm hover:bg-zinc-700"
                     >
                       Profile
                     </Link>
@@ -233,8 +250,85 @@ export default function Header() {
               </div>
             )}
           </div>
+
+          {/* Hamburger — mobile only */}
+          <button
+            className="md:hidden p-1 text-gray-300 hover:text-white transition"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? (
+              <XMarkIcon className="h-6 w-6" />
+            ) : (
+              <Bars3Icon className="h-6 w-6" />
+            )}
+          </button>
         </div>
       </div>
+
+      {/* ── Mobile slide-down menu ── */}
+      {menuOpen && (
+        <div className="md:hidden border-t border-gray-800 bg-[#141414] px-4 py-3 flex flex-col">
+          {/* Nav links */}
+          {navItems.map((item) => (
+            <Link
+              key={item.label}
+              to={item.href}
+              onClick={() => setMenuOpen(false)}
+              className="block rounded px-2 py-3 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition"
+            >
+              {item.label}
+            </Link>
+          ))}
+
+          {/* Divider + user section */}
+          <div className="mt-2 border-t border-gray-800 pt-3">
+            {user ? (
+              <>
+                <p className="truncate px-2 pb-2 text-xs text-gray-500">
+                  {user.email}
+                </p>
+
+                <Link
+                  to="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="block rounded px-2 py-3 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition"
+                >
+                  Profile
+                </Link>
+
+                <button
+                  onClick={async () => {
+                    await logout();
+                    setMenuOpen(false);
+                  }}
+                  className="block w-full rounded px-2 py-3 text-left text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition cursor-pointer"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <div className="flex gap-6 px-2 py-2">
+                <Link
+                  to="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="text-sm text-gray-300 hover:text-white transition"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMenuOpen(false)}
+                  className="text-sm text-gray-300 hover:text-white transition"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

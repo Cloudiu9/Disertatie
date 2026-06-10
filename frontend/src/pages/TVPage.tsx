@@ -4,6 +4,7 @@ import Hero from "../components/HeroBanner";
 import { fetchTVGenres } from "../api/tv";
 import { SkeletonHero, SkeletonRow } from "../components/Skeletons";
 import UserTVRecommendationsRow from "../components/UserTVRecommendationsRow";
+import GenreSelector from "../components/GenreSelector";
 
 function TVPage() {
   const [genres, setGenres] = useState<string[]>([]);
@@ -43,35 +44,12 @@ function TVPage() {
         </div>
       )}
 
-      <section className="space-y-4 px-4 sm:px-6">
-        <h2 className="text-base sm:text-lg font-semibold text-white text-center sm:text-left">
-          Browse TV by Genre
-        </h2>
-
-        <div className="flex flex-col sm:flex-row sm:justify-center gap-3">
-          {genres.map((genre) => {
-            const active = selectedGenre === genre;
-
-            return (
-              <button
-                key={genre}
-                onClick={() => setSelectedGenre(active ? null : genre)}
-                className={`
-                  px-4 py-2 rounded-full text-sm font-medium
-                  transition-all duration-200
-                  ${
-                    active
-                      ? "bg-red-600 text-white scale-105"
-                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                  }
-                `}
-              >
-                {genre}
-              </button>
-            );
-          })}
-        </div>
-      </section>
+      {/* Genre Selector */}
+      <GenreSelector
+        genres={genres}
+        selectedGenre={selectedGenre}
+        onSelect={setSelectedGenre}
+      />
 
       <div className={selectedGenre ? "min-h-100" : ""}>
         <div

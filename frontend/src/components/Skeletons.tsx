@@ -12,7 +12,7 @@ function SkeletonRow({ count = 8 }: { count?: number }) {
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
-            className="h-[315px] w-[230px] bg-gray-800 rounded-md animate-pulse"
+            className="h-78.75 w-57.5 bg-gray-800 rounded-md animate-pulse"
           />
         ))}
       </div>
@@ -26,7 +26,7 @@ function SkeletonGrid({ count = 14 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="w-full aspect-[2/3] bg-gray-800 rounded-md animate-pulse"
+          className="w-full aspect-2/3 bg-gray-800 rounded-md animate-pulse"
         />
       ))}
     </div>
@@ -38,12 +38,12 @@ function SkeletonDetails() {
     <div className="min-h-screen bg-black text-white">
       {/* Backdrop area */}
       <div className="relative h-[80vh] w-full bg-gray-900 animate-pulse">
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/20" />
+        <div className="absolute inset-0 bg-linear-to-t from-black via-black/70 to-black/20" />
 
         <div className="relative z-10 mx-auto flex h-full max-w-screen-2xl items-end px-6 pb-12">
           <div className="flex gap-8">
             {/* Poster */}
-            <div className="w-[220px] min-w-[220px] h-[330px] bg-gray-800 rounded-lg" />
+            <div className="w-55 min-w-55 h-82.5 bg-gray-800 rounded-lg" />
 
             {/* Info panel */}
             <div className="max-w-2xl w-full space-y-4">
