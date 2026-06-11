@@ -12,7 +12,7 @@ import { useAuth } from "../context/AuthContext";
 
 import type { Movie } from "../types/Movie";
 import type { TVShow } from "../types/TVShow";
-import { SkeletonDetails } from "../components/Skeletons"; // add to imports
+import { SkeletonDetails } from "../components/Skeletons";
 
 import { toast } from "react-hot-toast";
 
@@ -269,22 +269,36 @@ function DetailsPage({ mediaType }: Props) {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* HERO */}
       <div
-        className="relative h-[80vh] w-full bg-cover bg-center"
+        className="relative w-full bg-cover bg-center min-h-[50vh] sm:min-h-[60vh] lg:min-h-[70vh] flex items-end"
         style={{
           backgroundImage: backdropUrl ? `url(${backdropUrl})` : undefined,
         }}
       >
-        <div className="absolute inset-0 bg-linear-to-t from-black via-black/70 to-black/20" />
+        {/* responsive height gradient transition */}
+        <div className="absolute inset-0 bg-linear-to-t from-black via-black/60 to-black/10" />
 
-        <div className="relative z-10 mx-auto flex h-full max-w-screen-2xl items-end px-6 pb-12">
-          <div className="flex gap-8">
-            <img src={posterUrl} className="w-55 rounded-lg shadow-xl" />
+        {/* CONTENT CONTAINER - Snaps to bottom on desktop via parent flex items-end */}
+        <div className="relative z-10 w-full mx-auto max-w-screen-2xl px-4 sm:px-6 pt-32 pb-10">
+          {/* LAYOUT SWITCH */}
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-center lg:items-end">
+            {/* POSTER */}
+            <img
+              src={posterUrl}
+              className="w-40 sm:w-52 lg:w-60 rounded-lg shadow-2xl mx-auto lg:mx-0 transform lg:translate-y-6 z-20 border border-white/10"
+              alt={item.title}
+            />
 
-            <div className="max-w-2xl">
-              <h1 className="text-4xl font-extrabold mb-3">{item.title}</h1>
+            {/* CONTENT */}
+            <div className="flex-1 min-w-0 w-full">
+              {/* TITLE */}
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold mb-3 text-center lg:text-left tracking-tight drop-shadow-md">
+                {item.title}
+              </h1>
 
-              <div className="text-gray-300 mb-3">
+              {/* META */}
+              <div className="mb-3 flex justify-center lg:justify-start">
                 <MovieMeta
                   year={item.year}
                   rating={item.rating}
@@ -294,84 +308,88 @@ function DetailsPage({ mediaType }: Props) {
                 />
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-3">
+              {/* GENRES */}
+              <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-4">
                 {item.genres.map((g) => (
                   <span
                     key={g}
-                    className="bg-white/10 px-2 py-1 rounded text-sm"
+                    className="bg-white/10 px-2.5 py-1 rounded text-xs sm:text-sm font-medium backdrop-blur-xs"
                   >
                     {g}
                   </span>
                 ))}
               </div>
 
+              {/* OVERVIEW */}
               {item.overview && (
-                <p className="text-gray-200 max-w-xl">{item.overview}</p>
+                <p className="text-gray-300 max-w-3xl text-sm sm:text-base text-center lg:text-left leading-relaxed drop-shadow-xs">
+                  {item.overview}
+                </p>
               )}
 
-              <div className="flex gap-3 mt-6 items-start">
+              {/* ACTIONS */}
+              <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3 justify-center lg:justify-start">
+                {/* PLAY */}
                 <button
                   onClick={playTrailer}
-                  className="bg-white text-black px-6 py-2 rounded font-semibold cursor-pointer"
+                  className="bg-white text-black hover:bg-white/90 active:scale-98 transition px-6 py-2.5 rounded font-semibold w-full sm:w-auto shadow-md"
                 >
-                  {loadingTrailer ? "Loading" : "Play"}
+                  {loadingTrailer ? "Loading..." : "Play"}
                 </button>
 
+                {/* WATCHLIST */}
                 <button
                   onClick={toggleWatchlist}
-                  className="bg-white/20 px-5 py-2 rounded font-semibold cursor-pointer"
+                  className="bg-white/20 hover:bg-white/30 active:scale-98 transition px-5 py-2.5 rounded font-semibold w-full sm:w-auto truncate backdrop-blur-xs"
                 >
-                  {inWatchlist ? "✓ In Watchlist" : "+ Watchlist"}
+                  {inWatchlist ? "✓ Watchlist" : "+ Watchlist"}
                 </button>
 
-                <div className="relative">
+                {/* WATCHED MENU */}
+                <div className="relative w-full sm:w-auto">
                   <button
                     onClick={() => setActionMenuOpen((prev) => !prev)}
-                    className="bg-red-600 hover:bg-red-500 px-5 py-2 rounded font-semibold cursor-pointer"
+                    className="bg-red-600 hover:bg-red-500 active:scale-98 transition px-5 py-2.5 rounded font-semibold w-full sm:w-auto"
                   >
                     {inWatched ? "✓ Watched" : "Watched"}
                   </button>
-
                   {actionMenuOpen && (
-                    <div className="absolute left-0 mt-2 w-44 rounded-lg border border-white/10 bg-black/95 shadow-xl overflow-hidden z-20">
+                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-44 rounded-lg border border-white/10 bg-black/95 shadow-xl overflow-hidden z-20 backdrop-blur-md">
                       <button
                         onClick={() => addToWatched("seen")}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
                       >
                         Seen
                       </button>
                       <button
                         onClick={() => addToWatched("like")}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
                       >
                         Like
                       </button>
                       <button
                         onClick={() => addToWatched("love")}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10"
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
                       >
                         Love
                       </button>
-
                       <div className="h-px bg-white/10 my-1" />
-
-                      {inWatched ? (
+                      {inWatched && (
                         <button
                           onClick={removeFromWatched}
-                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10"
+                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition"
                         >
-                          Remove from Watched
+                          Remove
                         </button>
-                      ) : (
-                        ""
                       )}
                     </div>
                   )}
                 </div>
               </div>
 
+              {/* STATUS */}
               {inWatched && watchedItem?.interaction && (
-                <p className="mt-3 text-sm text-gray-400">
+                <p className="mt-3 text-sm text-gray-400 text-center lg:text-left italic">
                   Marked as: {watchedItem.interaction}
                 </p>
               )}
@@ -379,7 +397,7 @@ function DetailsPage({ mediaType }: Props) {
           </div>
         </div>
       </div>
-
+      {/* RECOMMENDATIONS */}
       <div className="mt-10">
         {recommendations.length > 0 && (
           <MovieRow
@@ -394,16 +412,15 @@ function DetailsPage({ mediaType }: Props) {
           />
         )}
       </div>
-
-      <div className="max-w-screen-2xl mx-auto px-6 py-8">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
         <Link
           to={mediaType === "tv" ? "/tv" : "/"}
-          className="text-gray-400 hover:text-white"
+          className="text-gray-400 hover:text-white transition-colors"
         >
           ← Back
         </Link>
       </div>
-
+      {/* TRAILER */}
       {trailerOpen && (
         <TrailerModal
           videoKey={trailerKey}
