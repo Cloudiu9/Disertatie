@@ -146,4 +146,7 @@ WORKING ON: User-based recommendations
     - Added AI explanations for each recommendation
     - Added an AI chatbot where users can ask for recommendations
 
-TODO Refresh User Recommendations from Landing Pages (make them more dynamic, randomized, more recommendations, etc.)
+--DONE-- Refresh User Recommendations from Landing Pages (make them more dynamic, randomized, more recommendations, etc.)
+--DONE-- Fixed responsiveness of main page (Header was out of view on laptop sizes, incomplete on mobile sizes)
+--DONE-- Fix DetailsPage responsiveness (rework completely for mobile? seems to work well until ~650px width, then +Watchlist button becomes too large and all buttons get left out of view)
+--DONE-- On mobile, it seems that onboarding process' interactions are glitched (clicking once is blue, which is correct, but clicking more times doesn't change the color borders correctly, it seems to change them randomly, blue-> yellow-> red-> nothing -> blue -> red -> nothing -> blue -> yellow -> red -> nothing, upon further testing, it seems this is caused by clicking too fast, which is a weird bug.)

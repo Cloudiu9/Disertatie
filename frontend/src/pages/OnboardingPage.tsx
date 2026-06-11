@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 type MediaItem = {
@@ -64,7 +64,7 @@ function SkeletonGrid() {
       {Array.from({ length: 12 }).map((_, i) => (
         <div
           key={i}
-          className="aspect-[2/3] rounded-lg bg-gray-800 animate-pulse"
+          className="aspect-2/3 rounded-lg bg-gray-800 animate-pulse"
         />
       ))}
     </div>
@@ -86,6 +86,7 @@ export default function OnboardingPage() {
   const [genres, setGenres] = useState<GenreKey[]>([]);
   const [movies, setMovies] = useState<MediaItem[]>([]);
   const [tvShows, setTvShows] = useState<MediaItem[]>([]);
+  const lastToggleTime = useRef<Record<number, number>>({});
 
   const [moviesLoading, setMoviesLoading] = useState(false);
   const [tvLoading, setTvLoading] = useState(false);
@@ -149,25 +150,29 @@ export default function OnboardingPage() {
   }, [genres]);
 
   function toggleMovie(id: number) {
+    const now = Date.now();
+    if (now - (lastToggleTime.current[id] ?? 0) < 150) return;
+    lastToggleTime.current[id] = now;
+
     setMovieInteractions((prev) => {
       const next = nextInteraction(prev[id]);
       const copy = { ...prev };
-
       if (!next) delete copy[id];
       else copy[id] = next;
-
       return copy;
     });
   }
 
   function toggleTV(id: number) {
+    const now = Date.now();
+    if (now - (lastToggleTime.current[id] ?? 0) < 150) return;
+    lastToggleTime.current[id] = now;
+
     setTvInteractions((prev) => {
       const next = nextInteraction(prev[id]);
       const copy = { ...prev };
-
       if (!next) delete copy[id];
       else copy[id] = next;
-
       return copy;
     });
   }
@@ -203,7 +208,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="max-w-screen-xl mx-auto px-6 py-10 text-white">
+    <div className="max-w-7xl mx-auto px-6 py-10 text-white">
       <h1 className="text-4xl font-bold mt-10 mb-2">What are you into?</h1>
 
       <p className="text-gray-400 mb-8 text-sm leading-relaxed">
@@ -291,7 +296,7 @@ export default function OnboardingPage() {
                   <img
                     key={m.tmdb_id}
                     src={`https://image.tmdb.org/t/p/w342${m.poster_path}`}
-                    className={`cursor-pointer rounded-lg transition transform hover:scale-105 ${ringColor(
+                    className={`cursor-pointer rounded-lg transition transform hover:scale-105 touch-manipulation ${ringColor(
                       movieInteractions[m.tmdb_id],
                     )}`}
                     onClick={() => toggleMovie(m.tmdb_id)}
@@ -311,7 +316,7 @@ export default function OnboardingPage() {
                   <img
                     key={t.tmdb_id}
                     src={`https://image.tmdb.org/t/p/w342${t.poster_path}`}
-                    className={`cursor-pointer rounded-lg transition transform hover:scale-105 ${ringColor(
+                    className={`cursor-pointer rounded-lg transition transform hover:scale-105 touch-manipulation ${ringColor(
                       tvInteractions[t.tmdb_id],
                     )}`}
                     onClick={() => toggleTV(t.tmdb_id)}
