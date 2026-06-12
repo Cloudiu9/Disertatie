@@ -3,10 +3,10 @@ import re
 import joblib
 import os
 import pickle
+import numpy as np
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 # ------------------------
 # DB CONNECTION
@@ -34,57 +34,55 @@ def clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 def name_token(name: str) -> str:
-    """
-    Collapse a person's name into a single token.
-    "Christopher Nolan" → "christopher_nolan"
-    Prevents first/last names matching unrelated overview words.
-    """
     if not name:
         return ""
     return re.sub(r"\s+", "_", name.strip().lower())
 
 # ------------------------
-# LOAD MOVIES
+# LOAD MOVIES (Optimized via Streaming Cursor)
 # ------------------------
-movies = list(
-    movies_collection.find(
-        {},
-        {
-            "_id": 0,
-            "tmdb_id": 1,
-            "title": 1,
-            "overview": 1,
-            "genres": 1,
-            "tagline": 1,
-            "keywords": 1,
-            "cast": 1,
-            "director": 1,
-        },
-    )
+print("Fetching movies from database...")
+movies_cursor = movies_collection.find(
+    {},
+    {
+        "_id": 0,
+        "tmdb_id": 1,
+        "title": 1,
+        "overview": 1,
+        "genres": 1,
+        "tagline": 1,
+        "keywords": 1,
+        "cast": 1,
+        "director": 1,
+    },
 )
-if not movies:
-    raise RuntimeError("No movies found in database")
 
 documents = []
 tmdb_ids = []
 
-for m in movies:
+for m in movies_cursor:
     genres_clean   = clean_text(" ".join(m.get("genres", [])))
     keywords_clean = clean_text(" ".join(m.get("keywords", [])))
     cast_tokens    = " ".join(name_token(n) for n in m.get("cast", []))
     director_token = name_token(m.get("director") or "")
 
     text = " ".join([
-        clean_text(m.get("title", "")) * 2,   # title: short but precise
+        clean_text(m.get("title", "")) * 2,
         clean_text(m.get("overview", "")),
         clean_text(m.get("tagline", "")),
-        (genres_clean + " ") * 3,             # primary axis
-        (keywords_clean + " ") * 2,           # precise thematic signal
-        (cast_tokens + " ") * 2,              # actor-based similarity
-        (director_token + " ") * 3,           # strong auteur signal
+        (genres_clean + " ") * 3,
+        (keywords_clean + " ") * 2,
+        (cast_tokens + " ") * 2,
+        (director_token + " ") * 3,
     ])
     documents.append(text)
     tmdb_ids.append(int(m["tmdb_id"]))
+
+num_movies = len(tmdb_ids)
+if num_movies == 0:
+    raise RuntimeError("No movies found in database")
+
+print(f"Loaded {num_movies} movies. Building TF-IDF Matrix...")
 
 # ------------------------
 # TF-IDF
@@ -98,6 +96,9 @@ vectorizer = TfidfVectorizer(
 )
 tfidf_matrix = vectorizer.fit_transform(documents)
 
+# Convert to Compressed Sparse Row format to ensure faster row slicing
+tfidf_matrix = tfidf_matrix.tocsr()
+
 # ------------------------
 # SAVE ARTIFACTS
 # ------------------------
@@ -107,17 +108,38 @@ with open(f"{ARTIFACTS_PATH}/tfidf_index_to_tmdb.json", "w") as f:
     json.dump(tmdb_ids, f)
 
 # ------------------------
-# BUILD SIMILARITY MAP
+# BUILD SIMILARITY MAP (Memory-Safe & Vectorized)
 # ------------------------
-print("Computing cosine similarity...")
-cosine_sim = cosine_similarity(tfidf_matrix)
-
+print("Computing similarity map row-by-row...")
 tfidf_map = {}
+
+# Pre-transpose the matrix once for optimal dot product performance
+tfidf_matrix_T = tfidf_matrix.T
+
 for idx, tmdb_id in enumerate(tmdb_ids):
-    sim_scores = [(i, s) for i, s in enumerate(cosine_sim[idx]) if i != idx]
-    sim_scores.sort(key=lambda x: x[1], reverse=True)
+    # Calculate cosine similarity for JUST this row against all items
+    # Spares us from allocating a massive dense NxN grid
+    sim_scores = tfidf_matrix[idx].dot(tfidf_matrix_T).toarray().flatten()
+    
+    # Force self-similarity to a penalty score so a movie never recommends itself
+    sim_scores[idx] = -1.0
+    
+    # Safe boundary check for catalogs smaller than 50 items
+    k = min(50, num_movies - 1)
+    if k <= 0:
+        tfidf_map[tmdb_id] = []
+        continue
+        
+    # High-performance NumPy argpartition: isolates top-K elements in O(N) linear time
+    top_k_idx = np.argpartition(sim_scores, -k)[-k:]
+    
+    # Sort only those isolated 50 items, preserving top-ranking order
+    top_k_idx = top_k_idx[np.argsort(sim_scores[top_k_idx])[::-1]]
+    
+    # Save matches, filtering out completely un-matched items (score <= 0)
     tfidf_map[tmdb_id] = [
-        (tmdb_ids[i], float(score)) for i, score in sim_scores[:50]
+        (tmdb_ids[i], float(sim_scores[i])) 
+        for i in top_k_idx if sim_scores[i] > 0
     ]
 
 # ------------------------
@@ -127,4 +149,4 @@ with open(f"{MODELS_PATH}/movie_tfidf.pkl", "wb") as f:
     pickle.dump(tfidf_map, f)
 
 print(f"Saved similarity map for {len(tfidf_map)} movies.")
-print("Movie recommender built successfully.")
+print("Movie recommender built successfully and optimally.")
