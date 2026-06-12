@@ -3,10 +3,10 @@ import re
 import joblib
 import os
 import pickle
+import numpy as np
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 # ------------------------
 # DB CONNECTION
@@ -34,57 +34,55 @@ def clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 def name_token(name: str) -> str:
-    """
-    Collapse a person's name into a single token.
-    "Vince Gilligan" → "vince_gilligan"
-    Prevents first/last names matching unrelated overview words.
-    """
     if not name:
         return ""
     return re.sub(r"\s+", "_", name.strip().lower())
 
 # ------------------------
-# LOAD SHOWS
+# LOAD SHOWS (Optimized via Streaming Cursor)
 # ------------------------
-shows = list(
-    tv_collection.find(
-        {},
-        {
-            "_id": 0,
-            "tmdb_id": 1,
-            "name": 1,
-            "overview": 1,
-            "genres": 1,
-            "tagline": 1,
-            "keywords": 1,
-            "cast": 1,
-            "creator": 1,
-        },
-    )
+print("Fetching TV shows from database...")
+shows_cursor = tv_collection.find(
+    {},
+    {
+        "_id": 0,
+        "tmdb_id": 1,
+        "name": 1,
+        "overview": 1,
+        "genres": 1,
+        "tagline": 1,
+        "keywords": 1,
+        "cast": 1,
+        "creator": 1,
+    },
 )
-if not shows:
-    raise RuntimeError("No TV shows found in database")
 
 documents = []
 tmdb_ids = []
 
-for s in shows:
+for s in shows_cursor:
     genres_clean   = clean_text(" ".join(s.get("genres", [])))
     keywords_clean = clean_text(" ".join(s.get("keywords", [])))
     cast_tokens    = " ".join(name_token(n) for n in s.get("cast", []))
     creator_token  = name_token(s.get("creator") or "")
 
     text = " ".join([
-        clean_text(s.get("name", "")) * 2,    # title: short but precise
+        clean_text(s.get("name", "")) * 2,
         clean_text(s.get("overview", "")),
         clean_text(s.get("tagline", "")),
         (genres_clean + " ") * 3,             # primary axis
         (keywords_clean + " ") * 2,           # precise thematic signal
         (cast_tokens + " ") * 2,              # actor-based similarity
-        (creator_token + " ") * 3,            # strong auteur signal
+        (creator_token + " ") * 3,            # strong auteur/creator signal
     ])
     documents.append(text)
     tmdb_ids.append(int(s["tmdb_id"]))
+
+num_shows = len(tmdb_ids)
+if num_shows == 0:
+    raise RuntimeError("No TV shows found in database")
+
+print(f"Loaded {num_shows} TV shows. Building TF-IDF Matrix...")
 
 # ------------------------
 # TF-IDF
@@ -98,6 +96,9 @@ vectorizer = TfidfVectorizer(
 )
 tfidf_matrix = vectorizer.fit_transform(documents)
 
+# Convert to Compressed Sparse Row format for optimal slicing performance
+tfidf_matrix = tfidf_matrix.tocsr()
+
 # ------------------------
 # SAVE ARTIFACTS
 # ------------------------
@@ -107,17 +108,37 @@ with open(f"{ARTIFACTS_PATH}/tv_index_to_tmdb.json", "w") as f:
     json.dump(tmdb_ids, f)
 
 # ------------------------
-# BUILD SIMILARITY MAP
+# BUILD SIMILARITY MAP (Memory-Safe & Vectorized)
 # ------------------------
-print("Computing cosine similarity...")
-cosine_sim = cosine_similarity(tfidf_matrix)
-
+print("Computing similarity map row-by-row...")
 tfidf_map = {}
+
+# Pre-transpose the matrix once for optimal dot product performance
+tfidf_matrix_T = tfidf_matrix.T
+
 for idx, tmdb_id in enumerate(tmdb_ids):
-    sim_scores = [(i, s) for i, s in enumerate(cosine_sim[idx]) if i != idx]
-    sim_scores.sort(key=lambda x: x[1], reverse=True)
+    # Calculate cosine similarity for JUST this single row using sparse dot product
+    sim_scores = tfidf_matrix[idx].dot(tfidf_matrix_T).toarray().flatten()
+    
+    # Penalize self-similarity so a TV show never recommends itself
+    sim_scores[idx] = -1.0
+    
+    # Safe boundary check for small catalogs
+    k = min(50, num_shows - 1)
+    if k <= 0:
+        tfidf_map[tmdb_id] = []
+        continue
+        
+    # High-performance NumPy argpartition: isolates top-K elements in linear time O(N)
+    top_k_idx = np.argpartition(sim_scores, -k)[-k:]
+    
+    # Sort only those isolated 50 items to get the proper ranking order
+    top_k_idx = top_k_idx[np.argsort(sim_scores[top_k_idx])[::-1]]
+    
+    # Save matches, completely skipping non-matched records (score <= 0)
     tfidf_map[tmdb_id] = [
-        (tmdb_ids[i], float(score)) for i, score in sim_scores[:50]
+        (tmdb_ids[i], float(sim_scores[i])) 
+        for i in top_k_idx if sim_scores[i] > 0
     ]
 
 # ------------------------
@@ -126,5 +147,5 @@ for idx, tmdb_id in enumerate(tmdb_ids):
 with open(f"{MODELS_PATH}/tv_tfidf.pkl", "wb") as f:
     pickle.dump(tfidf_map, f)
 
-print(f"Saved similarity map for {len(tfidf_map)} shows.")
-print("TV recommender built successfully.")
+print(f"Saved similarity map for {len(tfidf_map)} TV shows.")
+print("TV recommender built successfully and optimally.")

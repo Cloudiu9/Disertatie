@@ -1,36 +1,28 @@
 import json
-import joblib
-import numpy as np
-from flask import Blueprint, jsonify
-from sklearn.metrics.pairwise import cosine_similarity
-from pymongo import MongoClient
+import pickle
 import os
+from flask import Blueprint, jsonify
+from pymongo import MongoClient
+from dotenv import load_dotenv
 
+load_dotenv()
 bp = Blueprint("recommendations", __name__)
 
 # ------------------------
-# LOAD ARTIFACTS (ONCE)
+# PATHS & MODEL LOADING (ONCE AT STARTUP)
 # ------------------------
-vectorizer = joblib.load("./artifacts/tfidf_vectorizer.joblib")
-tfidf_matrix = joblib.load("./artifacts/tfidf_matrix.joblib")
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
+MODELS_PATH = os.path.join(PROJECT_ROOT, "models")
 
-with open("./artifacts/tfidf_index_to_tmdb.json") as f:
-    index_to_tmdb = json.load(f)
+# Load precomputed O(1) similarity lookups built by our build scripts
+with open(os.path.join(MODELS_PATH, "movie_tfidf.pkl"), "rb") as f:
+    movie_similarity_map = pickle.load(f)
 
-# O(1) lookup map
-tmdb_to_index = {tmdb: i for i, tmdb in enumerate(index_to_tmdb)}
-
-tv_vectorizer = joblib.load("./artifacts/tv_vectorizer.joblib")
-tv_tfidf_matrix = joblib.load("./artifacts/tv_tfidf_matrix.joblib")
-
-with open("./artifacts/tv_index_to_tmdb.json") as f:
-    tv_index_to_tmdb = json.load(f)
-
-# O(1) lookup map (TV)
-tv_tmdb_to_index = {tmdb: i for i, tmdb in enumerate(tv_index_to_tmdb)}
+with open(os.path.join(MODELS_PATH, "tv_tfidf.pkl"), "rb") as f:
+    tv_similarity_map = pickle.load(f)
 
 # ------------------------
-# DB
+# DB CONNECTION
 # ------------------------
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client["movie_platform"]
@@ -38,87 +30,76 @@ movies_collection = db["movies"]
 tv_collection = db["tv"]
 
 # ------------------------
-# MOVIE RECOMMENDATIONS
+# MOVIE-TO-MOVIE RECOMMENDATIONS
 # ------------------------
 @bp.route("/api/recommendations/movie/<int:tmdb_id>", methods=["GET"])
 def recommend_for_movie(tmdb_id):
+    # O(1) Fetch precomputed similarities
+    similar_items = movie_similarity_map.get(tmdb_id)
+    if similar_items is None:
+        return jsonify({"error": "TMDB id not found in precomputed model"}), 404
 
-    idx = tmdb_to_index.get(tmdb_id)
-    if idx is None:
-        return jsonify({"error": "TMDB id not found in model"}), 404
+    # Extract the top 10 recommendations from the precomputed top 50
+    top_10_matches = similar_items[:10]
+    if not top_10_matches:
+        return jsonify([])
 
-    similarities = cosine_similarity(
-        tfidf_matrix[idx], tfidf_matrix
-    ).flatten()
+    # Map tmdb_id -> similarity score for quick local lookup
+    scores_map = {item_id: score for item_id, score in top_10_matches}
+    recommended_ids = list(scores_map.keys())
 
-    # Exclude itself
-    similarities[idx] = 0
-
-    top_indices = np.argsort(similarities)[-10:][::-1]
-
-    tmdb_with_scores = {
-        index_to_tmdb[i]: float(similarities[i])
-        for i in top_indices
-    }
-
-    recommended_tmdb_ids = list(tmdb_with_scores.keys())
-
-    # Fetch once
+    # Batch fetch the documents from MongoDB in a single roundtrip
     movies_cursor = movies_collection.find(
-        {"tmdb_id": {"$in": recommended_tmdb_ids}},
+        {"tmdb_id": {"$in": recommended_ids}},
         {"_id": 0},
     )
 
-    # Map for deterministic ordering
-    movies_map = {m["tmdb_id"]: m for m in movies_cursor}
+    # Convert cursor to a map to fix MongoDB's naturally unordered retrieval
+    movies_db_map = {m["tmdb_id"]: m for m in movies_cursor}
 
-    movies = []
-    for mid in recommended_tmdb_ids:
-        if mid in movies_map:
-            movie = movies_map[mid]
-            movie["similarity"] = round(tmdb_with_scores[mid], 3)
-            movies.append(movie)
+    # Reconstruct the collection with deterministic sort order
+    recommended_movies = []
+    for mid in recommended_ids:
+        if mid in movies_db_map:
+            movie = movies_db_map[mid]
+            movie["similarity"] = round(scores_map[mid], 3)
+            recommended_movies.append(movie)
 
-    return jsonify(movies)
+    return jsonify(recommended_movies)
 
 
 # ------------------------
-# TV RECOMMENDATIONS
+# TV-TO-TV RECOMMENDATIONS
 # ------------------------
 @bp.route("/api/recommendations/tv/<int:tmdb_id>", methods=["GET"])
 def recommend_for_tv(tmdb_id):
+    # O(1) Fetch precomputed similarities
+    similar_items = tv_similarity_map.get(tmdb_id)
+    if similar_items is None:
+        return jsonify({"error": "TMDB id not found in precomputed model"}), 404
 
-    idx = tv_tmdb_to_index.get(tmdb_id)
-    if idx is None:
-        return jsonify({"error": "TMDB id not found in model"}), 404
+    # Extract the top 10 recommendations from the precomputed top 50
+    top_10_matches = similar_items[:10]
+    if not top_10_matches:
+        return jsonify([])
 
-    similarities = cosine_similarity(
-        tv_tfidf_matrix[idx], tv_tfidf_matrix
-    ).flatten()
+    scores_map = {item_id: score for item_id, score in top_10_matches}
+    recommended_ids = list(scores_map.keys())
 
-    similarities[idx] = 0
-
-    top_indices = np.argsort(similarities)[-10:][::-1]
-
-    tmdb_with_scores = {
-        tv_index_to_tmdb[i]: float(similarities[i])
-        for i in top_indices
-    }
-
-    recommended_tmdb_ids = list(tmdb_with_scores.keys())
-
+    # Batch fetch from MongoDB
     shows_cursor = tv_collection.find(
-        {"tmdb_id": {"$in": recommended_tmdb_ids}},
+        {"tmdb_id": {"$in": recommended_ids}},
         {"_id": 0},
     )
 
-    shows_map = {s["tmdb_id"]: s for s in shows_cursor}
+    shows_db_map = {s["tmdb_id"]: s for s in shows_cursor}
 
-    shows = []
-    for tid in recommended_tmdb_ids:
-        if tid in shows_map:
-            show = shows_map[tid]
-            show["similarity"] = round(tmdb_with_scores[tid], 3)
-            shows.append(show)
+    # Reconstruct collection with deterministic sort order
+    recommended_shows = []
+    for tid in recommended_ids:
+        if tid in shows_db_map:
+            show = shows_db_map[tid]
+            show["similarity"] = round(scores_map[tid], 3)
+            recommended_shows.append(show)
 
-    return jsonify(shows)
+    return jsonify(recommended_shows)
