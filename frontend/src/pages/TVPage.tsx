@@ -22,7 +22,7 @@ function TVPage() {
   }, []);
 
   return (
-    <div className="space-y-12 pb-12 animate-fadeIn">
+    <div className="space-y-12 pb-12">
       {loadingGenres ? (
         <div
           className={`transition-opacity duration-400 ${
@@ -35,7 +35,7 @@ function TVPage() {
           <SkeletonRow />
         </div>
       ) : (
-        <div className="animate-fadeIn">
+        <div className="animate-fadeIn space-y-12">
           <Hero mediaType="tv" />
           <UserTVRecommendationsRow />
           <MovieRow title="Popular TV" sort="popularity" mediaType="tv" />
