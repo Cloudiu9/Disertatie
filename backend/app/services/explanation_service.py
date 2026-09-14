@@ -65,68 +65,58 @@ def _find_source_items(target_tmdb_id: int, user_item_ids: list, tfidf_map: dict
 
 
 def _build_prompt(target: dict, source_items: list) -> str:
-    """Prompt for user-preference-based explanations (recommendations row)."""
+    """Prompt for user-preference-based explanations."""
     target_name = target.get("name") or target.get("title") or "this title"
-    target_genres = ", ".join(target.get("genres", [])) or "unknown genre"
+    target_genres = ", ".join(target.get("genres", [])) or "unknown"
     target_keywords = ", ".join(target.get("keywords", [])[:5]) or "none"
 
     sources_text = ""
     for item in source_items:
         label = item.get("interaction", "seen")
         name = item.get("name") or item.get("title") or "unknown"
-        genres = ", ".join(item.get("genres", []))
-        sources_text += f'  - "{name}" ({label}) — genres: {genres}\n'
+        genres = ", ".join(item.get("genres", [])) or "unknown"
+        sources_text += f'- "{name}" ({label}): {genres}\n'
 
     if not sources_text:
-        sources_text = "  - (no specific source items found)\n"
+        sources_text = "(no specific source titles found)"
 
-    return f"""You are generating a short explanation for a movie/TV recommendation system.
+    return f"""Explain this recommendation in one short sentence.
 
-The user has shown interest in:
+User's liked/interacted titles:
 {sources_text}
-They are being recommended: "{target_name}"
-  Genres: {target_genres}
-  Themes/keywords: {target_keywords}
 
-Write exactly ONE sentence (max 20 words) explaining why "{target_name}" is a good recommendation for this user.
-- Be specific — mention a shared genre, theme, or mood
-- Sound natural, not robotic
-- Do not say "based on your history" or "our algorithm"
-- Do not use the word "recommendation"
-- Start with "Because" or a similar connector
+Recommended title: "{target_name}"
+Genres: {target_genres}
+Keywords: {target_keywords}
 
-Only output the sentence itself, nothing else."""
+Write one natural sentence of 20 words or fewer.
+Mention one concrete shared genre, theme, or mood.
+Do not use "both" or mention any titles.
+Start with "Because".
+Output only the sentence."""
 
 
 def _build_item_prompt(source: dict, target: dict) -> str:
-    """
-    Prompt for item-based explanations (DetailsPage).
-    References the page item the user is currently viewing,
-    not their personal history.
-    """
-    source_name  = source.get("name") or source.get("title") or "the current title"
-    target_name  = target.get("name") or target.get("title") or "this title"
-    source_genres  = ", ".join(source.get("genres", [])) or "unknown"
-    target_genres  = ", ".join(target.get("genres", [])) or "unknown"
+    """Prompt for item-based explanations."""
+    source_name = source.get("name") or source.get("title") or "the current title"
+    target_name = target.get("name") or target.get("title") or "this title"
+    source_genres = ", ".join(source.get("genres", [])) or "unknown"
+    target_genres = ", ".join(target.get("genres", [])) or "unknown"
     target_keywords = ", ".join(target.get("keywords", [])[:5]) or "none"
 
-    return f"""You are generating a short explanation for a movie/TV recommendation system.
+    return f"""Explain why these two titles are similar in one short sentence.
 
-The user is currently viewing: "{source_name}"
-  Genres: {source_genres}
+Current title: "{source_name}"
+Genres: {source_genres}
 
-They are being shown a similar title: "{target_name}"
-  Genres: {target_genres}
-  Themes/keywords: {target_keywords}
+Similar title: "{target_name}"
+Genres: {target_genres}
+Keywords: {target_keywords}
 
-Write exactly ONE sentence (max 20 words) explaining why "{target_name}" is similar to "{source_name}".
-- Be specific — mention a shared genre, theme, mood, or style
-- Sound natural, not robotic
-- Do not say "based on your history" or "our algorithm"
-- Do not use the word "recommendation"
-- Start with "Because" or a similar connector
-
-Only output the sentence itself, nothing else."""
+Write one natural sentence of 20 words or fewer.
+Mention one concrete shared genre, theme, mood, or style.
+Start with "Because".
+Output only the sentence."""
 
 
 def generate_explanation(user_id: str, tmdb_id: int, media_type: str) -> str:
@@ -158,12 +148,23 @@ def generate_explanation(user_id: str, tmdb_id: int, media_type: str) -> str:
         prompt = _build_prompt(target, source_items)
 
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=60,
+            max_tokens=300,
             temperature=0.7,
+            reasoning_effort="low",
         )
-        explanation = response.choices[0].message.content.strip()
+
+        print("[Explanation] Raw response:", response)
+
+        content = response.choices[0].message.content
+
+        if not content:
+            print("[Explanation] No content returned")
+            return "Recommended based on your taste profile."
+
+        explanation = content.strip()
+
         _explanation_cache[cache_key] = explanation
         return explanation
 
@@ -206,12 +207,23 @@ def generate_explanation_from_item(
         prompt = _build_item_prompt(source, target)
 
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=60,
+            max_tokens=300,
             temperature=0.7,
+            reasoning_effort="low",
         )
-        explanation = response.choices[0].message.content.strip()
+
+        print("[Explanation] Raw response:", response)
+
+        content = response.choices[0].message.content
+
+        if not content:
+            print("[Explanation] No content returned")
+            return "Similar themes and style make this a strong match."
+
+        explanation = content.strip()
+        
         _explanation_cache[cache_key] = explanation
         return explanation
 

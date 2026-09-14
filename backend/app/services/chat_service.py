@@ -3,8 +3,7 @@ import re
 import json
 import pickle
 from groq import Groq
-from bson import ObjectId
-from app.db import movies_collection, tv_collection, interactions_collection
+from app.db import movies_collection, tv_collection
 
 # ------------------------
 # GROQ CLIENT
@@ -24,7 +23,7 @@ with open(os.path.join(PROJECT_ROOT, "models/tv_tfidf.pkl"), "rb") as f:
 
 # ------------------------
 # VALID GENRE LISTS
-# (must match what's stored in your DB from TMDB)
+# (must match DB from TMDB)
 # ------------------------
 MOVIE_GENRES = [
     "Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary",
@@ -82,7 +81,7 @@ def _extract_intent(message: str, history: list) -> dict:
     messages.append({"role": "user", "content": message})
 
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-20b",
         messages=messages,
         max_tokens=300,
         temperature=0.3,   # low temp for consistent JSON

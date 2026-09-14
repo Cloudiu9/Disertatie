@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import type { Movie } from "../types/Movie";
 import type { TVShow } from "../types/TVShow";
-
 import { fetchMyList, removeFromMyList } from "../api/myList";
-
 import { toast } from "react-hot-toast";
-
 import MovieCard from "../components/MovieCard";
 import { SkeletonGrid } from "../components/Skeletons";
+import { useAuth } from "../context/AuthContext";
 
 type Item = (Movie | TVShow) & {
   media_type: "movie" | "tv";
@@ -22,6 +19,7 @@ function MyListPage() {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const watched = items.filter((i) => i.section === "watched");
   const watchlist = items.filter((i) => i.section === "watchlist");
@@ -85,7 +83,7 @@ function MyListPage() {
           </p>
 
           <button
-            onClick={() => navigate("/onboarding")}
+            onClick={() => navigate(user ? "/onboarding" : "/login")}
             className="bg-red-600 hover:bg-red-500 px-6 py-3 rounded-lg font-semibold text-white transition cursor-pointer"
           >
             Start Personalizing
