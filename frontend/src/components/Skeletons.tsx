@@ -52,7 +52,6 @@ function LoadingStatus({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-6 text-center">
-      {/* Netflix-style indicator */}
       <div className="mb-4 flex items-center gap-1.5">
         <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse" />
         <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse [animation-delay:150ms]" />

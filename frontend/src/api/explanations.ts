@@ -1,4 +1,3 @@
-// AFTER
 export async function fetchExplanation(
   tmdbId: number,
   mediaType: "movie" | "tv",

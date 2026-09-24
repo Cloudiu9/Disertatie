@@ -155,7 +155,7 @@ def generate_explanation(user_id: str, tmdb_id: int, media_type: str) -> str:
             reasoning_effort="low",
         )
 
-        print("[Explanation] Raw response:", response)
+        # print("[Explanation] Raw response:", response)
 
         content = response.choices[0].message.content
 
@@ -214,7 +214,7 @@ def generate_explanation_from_item(
             reasoning_effort="low",
         )
 
-        print("[Explanation] Raw response:", response)
+        # print("[Explanation] Raw response:", response)
 
         content = response.choices[0].message.content
 

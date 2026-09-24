@@ -162,8 +162,8 @@ VITE_API_BASE=http://localhost:8000
 
 ```bash
 cd backend
-python scripts/seed_movies.py
-python scripts/seed_tv.py
+python seed_movies.py
+python seed_tv.py
 ```
 
 Descarcă datele din TMDB și populează colecțiile MongoDB.
