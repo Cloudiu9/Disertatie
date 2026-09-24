@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import MovieRow from "../components/MovieRow";
 import Hero from "../components/HeroBanner";
 import { fetchTVGenres } from "../api/tv";
-import { SkeletonHero, SkeletonRow } from "../components/Skeletons";
+import { MoviesSkeleton } from "../components/Skeletons";
 import UserTVRecommendationsRow from "../components/UserTVRecommendationsRow";
 import GenreSelector from "../components/GenreSelector";
 
@@ -29,10 +29,7 @@ function TVPage() {
             skeletonFading ? "opacity-0" : "opacity-100"
           }`}
         >
-          <SkeletonHero />
-          <SkeletonRow />
-          <SkeletonRow />
-          <SkeletonRow />
+          <MoviesSkeleton />
         </div>
       ) : (
         <div className="animate-fadeIn space-y-12">

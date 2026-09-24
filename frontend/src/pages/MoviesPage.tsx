@@ -3,7 +3,7 @@ import { fetchGenres } from "../api/movies";
 import MovieRow from "../components/MovieRow";
 import Hero from "../components/HeroBanner";
 import UserMovieRecommendationsRow from "../components/UserMovieRecommendationsRow";
-import { SkeletonHero, SkeletonRow } from "../components/Skeletons";
+import { MoviesSkeleton } from "../components/Skeletons";
 import GenreSelector from "../components/GenreSelector";
 
 function MoviesPage() {
@@ -29,10 +29,7 @@ function MoviesPage() {
             skeletonFading ? "opacity-0" : "opacity-100"
           }`}
         >
-          <SkeletonHero />
-          <SkeletonRow />
-          <SkeletonRow />
-          <SkeletonRow />
+          <MoviesSkeleton />
         </div>
       ) : (
         <div className="animate-fadeIn space-y-12">

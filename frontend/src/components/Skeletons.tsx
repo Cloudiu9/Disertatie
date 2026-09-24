@@ -1,3 +1,85 @@
+import { useEffect, useState } from "react";
+
+function LoadingMessage() {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    const startTime = Date.now();
+
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (elapsedSeconds < 3) {
+    return <LoadingStatus title="Loading" subtitle="Just a moment…" />;
+  }
+
+  if (elapsedSeconds < 10) {
+    return (
+      <LoadingStatus
+        title="Getting things ready"
+        subtitle="Your movies are almost here…"
+      />
+    );
+  }
+
+  if (elapsedSeconds < 30) {
+    return (
+      <LoadingStatus
+        title="Waking things up"
+        subtitle="This can take a little longer on the first visit…"
+      />
+    );
+  }
+
+  return (
+    <LoadingStatus
+      title="Almost there"
+      subtitle="The server is taking a little longer to wake up…"
+    />
+  );
+}
+
+function LoadingStatus({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-6 text-center">
+      {/* Netflix-style indicator */}
+      <div className="mb-4 flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse" />
+        <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse [animation-delay:150ms]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse [animation-delay:300ms]" />
+      </div>
+
+      <p className="text-md font-medium tracking-wide text-white">{title}</p>
+
+      <p className="mt-1 text-sm text-gray-400">{subtitle}</p>
+    </div>
+  );
+}
+
+function MoviesSkeleton() {
+  return (
+    <div className="space-y-8">
+      <SkeletonHero />
+
+      <LoadingMessage />
+
+      <SkeletonRow />
+      <SkeletonRow />
+      <SkeletonRow />
+    </div>
+  );
+}
+
 function SkeletonHero() {
   return (
     <div className="w-full h-[60vh] bg-gray-800 animate-pulse rounded-sm" />
@@ -90,4 +172,10 @@ function SkeletonDetails() {
   );
 }
 
-export { SkeletonHero, SkeletonRow, SkeletonGrid, SkeletonDetails };
+export {
+  SkeletonHero,
+  SkeletonRow,
+  SkeletonGrid,
+  SkeletonDetails,
+  MoviesSkeleton,
+};
