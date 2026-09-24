@@ -185,7 +185,8 @@ def _collaborative_recommendation(
     if not final_scores:
         return list(collection.find({"tmdb_id": {"$nin": list(excluded_ids)}}, {"_id": 0}).sort("popularity", -1).limit(limit))
 
-    ranked_ids = sorted(final_scores, key=final_scores.get, reverse=True)[:limit]
+    # ranked_ids = sorted(final_scores, key=final_scores.get, reverse=True)[:limit]
+    ranked_ids = sorted(final_scores, key=lambda k: final_scores.get(k, 0), reverse=True)[:limit]
     items = list(collection.find({"tmdb_id": {"$in": ranked_ids}}, {"_id": 0}))
     order_map = {id_: i for i, id_ in enumerate(ranked_ids)}
     items.sort(key=lambda x: order_map.get(x["tmdb_id"], 9999))

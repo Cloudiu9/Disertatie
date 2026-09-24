@@ -74,7 +74,11 @@ function MovieCard({
       );
       setExplanation(text);
     } catch {
-      setExplanation("Recommended based on your taste profile.");
+      setExplanation(
+        sourceTmdbId && sourceMediaType
+          ? "Similar themes and style make this a strong match."
+          : "Recommended based on your taste profile.",
+      );
     } finally {
       setLoadingExplanation(false);
     }

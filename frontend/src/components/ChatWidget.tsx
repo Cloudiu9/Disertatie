@@ -92,7 +92,7 @@ export default function ChatWidget() {
         ...prev,
         {
           role: "assistant",
-          content: "Something went wrong — please try again.",
+          content: "Something went wrong - please try again.",
         },
       ]);
     } finally {
