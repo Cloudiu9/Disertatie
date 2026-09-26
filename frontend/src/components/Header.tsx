@@ -227,7 +227,8 @@ export default function Header() {
                       Profile
                     </Link>
 
-                    <button
+                    <Link
+                      to="/"
                       onClick={async () => {
                         await logout();
                         setOpen(false);
@@ -235,7 +236,7 @@ export default function Header() {
                       className="block w-full px-4 py-2 text-left text-sm hover:bg-zinc-800 cursor-pointer"
                     >
                       Logout
-                    </button>
+                    </Link>
                   </div>
                 )}
               </>
@@ -298,7 +299,8 @@ export default function Header() {
                   Profile
                 </Link>
 
-                <button
+                <Link
+                  to="/"
                   onClick={async () => {
                     await logout();
                     setMenuOpen(false);
@@ -306,7 +308,7 @@ export default function Header() {
                   className="block w-full rounded px-2 py-3 text-left text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition cursor-pointer"
                 >
                   Logout
-                </button>
+                </Link>
               </>
             ) : (
               <div className="flex gap-6 px-2 py-2">
