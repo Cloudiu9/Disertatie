@@ -17,6 +17,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate("/");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message);
     }
@@ -41,7 +42,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button className="bg-white text-black p-2 rounded hover:bg-gray-200 transition">
+          <button className="bg-white text-black p-2 rounded hover:cursor-pointer hover:bg-gray-200 transition">
             Login
           </button>
         </form>
