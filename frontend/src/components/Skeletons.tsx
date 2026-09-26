@@ -177,4 +177,5 @@ export {
   SkeletonGrid,
   SkeletonDetails,
   MoviesSkeleton,
+  LoadingMessage,
 };
