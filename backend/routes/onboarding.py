@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from itertools import zip_longest
 
 from flask import Blueprint, jsonify, request
 
@@ -78,20 +79,49 @@ def _expand_preferred_genres(selected_genre_keys):
     return _unique_preserve_order(expanded)
 
 
-def _build_genre_query(genres):
+def _fetch_diverse_by_genre(collection, genres, limit=30):
     """
-    Build a MongoDB $in query from a list of genre strings.
-    Returns an empty dict (no filter) if the input is empty or invalid.
-    """
-    if isinstance(genres, str):
-        genres = [genres]
-    if not isinstance(genres, (list, tuple)):
-        return {}
+    Pull a fair slice of top-popularity items from EACH selected genre and
+    interleave them, instead of one $in (OR) query sorted by popularity.
 
+    An $in query only loosens the filter as more genres are added — it
+    never diversifies the results — and gets dominated by whichever
+    genres are most common in the catalog (Action/Drama/Comedy tag most
+    popular movies), so selecting many genres ends up looking almost
+    identical to selecting just one broad one. Sampling per-genre and
+    round-robin merging guarantees every genre the user picked is
+    actually represented in what they see.
+    """
     cleaned = _unique_preserve_order(
         [g.strip() for g in genres if isinstance(g, str) and g.strip()]
     )
-    return {"genres": {"$in": cleaned}} if cleaned else {}
+    if not cleaned:
+        return list(
+            collection.find({}, {"_id": 0}).sort("popularity", -1).limit(limit)
+        )
+
+    per_genre = max(1, -(-limit // len(cleaned)))  # ceil division
+
+    buckets = [
+        list(
+            collection.find({"genres": genre}, {"_id": 0})
+            .sort("popularity", -1)
+            .limit(per_genre)
+        )
+        for genre in cleaned
+    ]
+
+    seen_ids = set()
+    result = []
+    for items in zip_longest(*buckets):
+        for item in items:
+            if item is None or item["tmdb_id"] in seen_ids:
+                continue
+            seen_ids.add(item["tmdb_id"])
+            result.append(item)
+            if len(result) >= limit:
+                return result
+    return result
 
 
 def _store_interactions(user_oid, media_type, items):
@@ -147,24 +177,14 @@ def _store_interactions(user_oid, media_type, items):
 @bp.route("/movies")
 def onboarding_movies():
     genres = request.args.getlist("genres")
-    query = _build_genre_query(genres)
-    movies = list(
-        movies_collection.find(query, {"_id": 0})
-        .sort("popularity", -1)
-        .limit(30)
-    )
+    movies = _fetch_diverse_by_genre(movies_collection, genres, limit=30)
     return jsonify(movies)
 
 
 @bp.route("/tv")
 def onboarding_tv():
     genres = request.args.getlist("genres")
-    query = _build_genre_query(genres)
-    shows = list(
-        tv_collection.find(query, {"_id": 0})
-        .sort("popularity", -1)
-        .limit(30)
-    )
+    shows = _fetch_diverse_by_genre(tv_collection, genres, limit=30)
     return jsonify(shows)
 
 
