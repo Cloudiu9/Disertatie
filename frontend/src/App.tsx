@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { Analytics } from "@vercel/analytics/react";
 import Header from "./components/Header";
 import MoviesPage from "./pages/MoviesPage";
 import MyListPage from "./pages/MyListPage";
@@ -48,6 +49,7 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
         </Routes>
         <ChatWidget />
+        <Analytics />
       </BrowserRouter>
     </AuthProvider>
   );
