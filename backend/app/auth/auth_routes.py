@@ -89,7 +89,7 @@ def register():
             # onboarding state
             "onboarding_complete": False,
 
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "last_login": None,
         })
     except Exception:
@@ -120,7 +120,7 @@ def login():
 
     users_collection.update_one(
         {"_id": user["_id"]},
-        {"$set": {"last_login": datetime.utcnow()}}
+        {"$set": {"last_login": datetime.now(timezone.utc)}}
     )
 
     response = make_response(jsonify({"email": email}))
