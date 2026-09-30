@@ -97,7 +97,7 @@ vectorizer = TfidfVectorizer(
 tfidf_matrix = vectorizer.fit_transform(documents)
 
 # Convert to Compressed Sparse Row format to ensure faster row slicing
-tfidf_matrix = tfidf_matrix.tocsr()
+tfidf_matrix = tfidf_matrix.tocsr() # type: ignore
 
 # ------------------------
 # SAVE ARTIFACTS
