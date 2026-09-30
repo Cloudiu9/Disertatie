@@ -13,6 +13,9 @@ def get_current_user_id():
         return None
 
     try:
+        if not JWT_SECRET:
+            raise RuntimeError("JWT_SECRET environment variable is missing!")
+    
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         return ObjectId(payload.get("sub"))
     except Exception:

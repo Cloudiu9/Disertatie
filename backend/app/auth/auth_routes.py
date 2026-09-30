@@ -1,7 +1,7 @@
 import os
 import jwt
 import bcrypt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, request, jsonify, make_response
 from email_validator import validate_email, EmailNotValidError
 from app.auth.auth_utils import get_current_user_id
@@ -29,11 +29,16 @@ def verify_password(password: str, password_hash: bytes) -> bool:
 
 
 def create_jwt(user_id: str, email: str) -> str:
+    if not JWT_SECRET:
+        raise RuntimeError("JWT_SECRET environment variable is missing!")
+    
+    now = datetime.now(timezone.utc)
+    
     payload = {
         "sub": user_id,
         "email": email,
-        "exp": datetime.utcnow() + timedelta(days=JWT_EXPIRES_DAYS),
-        "iat": datetime.utcnow(),
+        "exp": now + timedelta(days=JWT_EXPIRES_DAYS),
+        "iat": now,
     }
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
