@@ -25,8 +25,7 @@ INTERACTION_WEIGHTS = {
 # Loaded once at module import time (process startup), not per-request —
 # these pickles hold precomputed cosine-similarity neighbor lists for every
 # title in the catalog, built offline by build_movie_recommender.py /
-# build_tv_recommender.py. Loading them here means every request just does
-# an in-memory dict lookup instead of recomputing similarity live.
+# build_tv_recommender.py.
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 
 with open(os.path.join(PROJECT_ROOT, "models/movie_tfidf.pkl"), "rb") as f:
@@ -36,10 +35,6 @@ with open(os.path.join(PROJECT_ROOT, "models/tv_tfidf.pkl"), "rb") as f:
     tv_tfidf = pickle.load(f)
 
 # Process-lifetime cache for global popularity counts (see _compute_global_popularity).
-# NOTE: this cache is never invalidated — it reflects popularity at first-read
-# time and goes stale as users add to their lists afterward. Fine for a
-# dissertation-scale deployment; a production version would want a TTL or an
-# explicit invalidation hook whenever my_list changes.
 _popularity_cache: Dict[str, Counter] = {}
 
 def _extract_ids(raw_list: List[Any], media_type: str) -> List[int]:
@@ -54,10 +49,7 @@ def _extract_ids(raw_list: List[Any], media_type: str) -> List[int]:
 def _get_excluded_ids(user: Dict[str, Any], user_oid: ObjectId, media_type: str) -> Set[int]:
     # Items we should never recommend back to the user: anything already on
     # their watchlist, AND anything they've already logged an interaction for
-    # (seen/like/love). These are two separate storage locations (see
-    # my_list_routes.py), so both have to be queried and unioned here —
-    # checking only one would let an already-watched-and-removed-from-watchlist
-    # item slip back into their recommendations.
+    # (seen/like/love).
     my_list_ids = set(_extract_ids(user.get("my_list", []), media_type))
     watched_ids = {
         doc["tmdb_id"]
@@ -70,11 +62,9 @@ def _get_excluded_ids(user: Dict[str, Any], user_oid: ObjectId, media_type: str)
 
 def _compute_global_popularity(media_type: str) -> Counter:
     # Approximates "popularity" by counting how many users have each title on
-    # their my_list (a proxy signal, not TMDB's own popularity score — this is
+    # their my_list (not TMDB's own popularity score, this is
     # specifically what the hybrid score's popularity-penalty term uses to
-    # down-weight universally-added titles). Cached per media_type for the
-    # life of the process, since this is a full users-collection scan and is
-    # too expensive to repeat on every recommendation request.
+    # down-weight universally-added titles).
     if media_type in _popularity_cache:
         return _popularity_cache[media_type]
 
@@ -90,9 +80,7 @@ def _compute_global_popularity(media_type: str) -> Counter:
 def _get_user_interactions(user_oid: ObjectId, media_type: str, test_mode_interactions: Optional[Dict[int, int]] = None) -> Dict[int, int]:
     # test_mode_interactions lets evaluate_recommendations.py inject a
     # held-out training subset of a user's real interactions instead of
-    # reading their live, full interaction history — this is what makes
-    # offline recommendation-quality evaluation (train/test split) possible
-    # without touching production data or duplicating this query logic.
+    # reading their live, full interaction history
     if test_mode_interactions is not None:
         return test_mode_interactions
 
@@ -115,8 +103,7 @@ def _normalize(scores: Dict[int, float]) -> Dict[int, float]:
         return scores
     min_val = min(scores.values())
     max_val = max(scores.values())
-    # All scores identical (e.g. only one candidate) — avoid a divide-by-zero
-    # and just treat everything as equally maximally relevant.
+    # All scores identical (e.g. only one candidate) — avoid dividing-by-zero
     if max_val == min_val:
         return {k: 1.0 for k in scores}
     return {k: (v - min_val) / (max_val - min_val) for k, v in scores.items()}
@@ -129,9 +116,7 @@ def _get_content_scores(
     # For every item the user has interacted with, pull its precomputed
     # TF-IDF neighbor list and accumulate each neighbor's similarity score,
     # scaled by how strongly the user felt about the source item
-    # (INTERACTION_WEIGHTS). An item that's a close neighbor of several
-    # things the user loved will accumulate a higher score than one that's
-    # only a weak neighbor of something they merely marked "seen".
+    # (INTERACTION_WEIGHTS).
     scores = {}
     for item_id in item_ids:
         similar = tfidf_model.get(item_id, [])
@@ -167,7 +152,7 @@ def _collaborative_recommendation(
     collab_scores = {}
     n_similar_users = 0
 
-    # Pass 1: find candidate "neighbor" users — anyone (other than this user)
+    # Pass 1: find candidate "neighbor" users: anyone (other than this user)
     # who liked/loved at least one item this user also has. This is
     # intentionally a narrow, cheap query first, rather than scanning every
     # other user's full history up front.
@@ -191,7 +176,7 @@ def _collaborative_recommendation(
 
     # Pass 2: now that we know WHICH users are worth comparing against, fetch
     # their COMPLETE like/love history (not just the overlapping subset from
-    # pass 1) — Jaccard similarity needs each neighbor's full item set to be
+    # pass 1); Jaccard similarity needs each neighbor's full item set to be
     # computed correctly, and this also surfaces every item they liked that
     # the current user hasn't seen yet, which is the actual recommendation
     # candidate pool.
@@ -212,7 +197,7 @@ def _collaborative_recommendation(
     # each neighbor's full liked-item sets. A neighbor who overlaps heavily
     # relative to both of your total histories counts for more than one who
     # happens to share a single item out of hundreds.
-    for other_user_id, shared_items in similar_user_items.items():
+    for other_user_id in similar_user_items:
         other_full_history = histories_map[other_user_id]
         if not other_full_history: continue
         intersection = current_set & other_full_history
