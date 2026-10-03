@@ -62,9 +62,7 @@ def _get_excluded_ids(user: Dict[str, Any], user_oid: ObjectId, media_type: str)
 
 def _compute_global_popularity(media_type: str) -> Counter:
     # Approximates "popularity" by counting how many users have each title on
-    # their my_list (not TMDB's own popularity score, this is
-    # specifically what the hybrid score's popularity-penalty term uses to
-    # down-weight universally-added titles).
+    # their my_list
     if media_type in _popularity_cache:
         return _popularity_cache[media_type]
 
@@ -103,7 +101,7 @@ def _normalize(scores: Dict[int, float]) -> Dict[int, float]:
         return scores
     min_val = min(scores.values())
     max_val = max(scores.values())
-    # All scores identical (e.g. only one candidate) — avoid dividing-by-zero
+    # All scores identical (e.g. only one candidate); avoid dividing-by-zero
     if max_val == min_val:
         return {k: 1.0 for k in scores}
     return {k: (v - min_val) / (max_val - min_val) for k, v in scores.items()}
@@ -116,7 +114,6 @@ def _get_content_scores(
     # For every item the user has interacted with, pull its precomputed
     # TF-IDF neighbor list and accumulate each neighbor's similarity score,
     # scaled by how strongly the user felt about the source item
-    # (INTERACTION_WEIGHTS).
     scores = {}
     for item_id in item_ids:
         similar = tfidf_model.get(item_id, [])
@@ -133,8 +130,12 @@ def _collaborative_recommendation(
     collection,
     tfidf_model,
     limit: int,
-    test_mode_interactions: Optional[Dict[int, int]] = None # For evaluate_recommendations
+    test_mode_interactions: Optional[Dict[int, int]] = None, # For evaluate_recommendations
+    preferred_genres: Optional[List[str]] = None
 ):
+    current_weights = _get_user_interactions(user_oid, media_type, test_mode_interactions)
+    item_ids = list(set(item_ids) | set(current_weights.keys()))
+
     # Cold-start guard: with fewer than 3 interactions there isn't enough
     # signal to compute a meaningful Jaccard overlap with other users, so we
     # skip straight to a popularity-ranked fallback rather than return noise.
@@ -146,16 +147,13 @@ def _collaborative_recommendation(
         )
 
     current_set = set(item_ids)
-    current_weights = _get_user_interactions(user_oid, media_type, test_mode_interactions)
     global_counts = _compute_global_popularity(media_type)
 
     collab_scores = {}
     n_similar_users = 0
 
-    # Pass 1: find candidate "neighbor" users: anyone (other than this user)
-    # who liked/loved at least one item this user also has. This is
-    # intentionally a narrow, cheap query first, rather than scanning every
-    # other user's full history up front.
+    # Pass 1: find candidate "neighbor" users; anyone (other than this user)
+    # who liked/loved at least one item this user also has.
     overlapping_interactions = interactions_collection.find({
         "user_id": {"$ne": user_oid},
         "tmdb_id": {"$in": item_ids},
@@ -175,11 +173,10 @@ def _collaborative_recommendation(
     histories_map = defaultdict(set)
 
     # Pass 2: now that we know WHICH users are worth comparing against, fetch
-    # their COMPLETE like/love history (not just the overlapping subset from
-    # pass 1); Jaccard similarity needs each neighbor's full item set to be
-    # computed correctly, and this also surfaces every item they liked that
-    # the current user hasn't seen yet, which is the actual recommendation
-    # candidate pool.
+    # their COMPLETE like/love history — Jaccard similarity needs each
+    # neighbor's full item set to be computed correctly, and this also
+    # surfaces every item they liked that the current user hasn't seen yet,
+    # which is the actual recommendation candidate pool.
     if similar_user_ids:
         all_histories = interactions_collection.find(
             {
@@ -195,8 +192,8 @@ def _collaborative_recommendation(
 
     # Jaccard similarity: |intersection| / |union| of the current user's and
     # each neighbor's full liked-item sets. A neighbor who overlaps heavily
-    # relative to both of your total histories counts for more than one who
-    # happens to share a single item out of hundreds.
+    # relative to both total histories counts for more than one who happens
+    # to share a single item out of hundreds.
     for other_user_id in similar_user_items:
         other_full_history = histories_map[other_user_id]
         if not other_full_history: continue
@@ -208,8 +205,7 @@ def _collaborative_recommendation(
 
         # Every item this neighbor liked that the user hasn't interacted with
         # or already excluded gets a score bump proportional to how similar
-        # that neighbor is — a near-identical neighbor's taste counts far
-        # more than a barely-overlapping one.
+        # that neighbor is.
         for item_id in (other_full_history - current_set) - excluded_ids:
             collab_scores[item_id] = collab_scores.get(item_id, 0) + similarity
 
@@ -219,15 +215,28 @@ def _collaborative_recommendation(
     content_scores = _normalize(content_scores)
 
     # Adaptive weighting: with zero similar users, collab_weight is 0 and the
-    # hybrid silently degrades to pure content-based scoring. As more
-    # similar users are found (capped at 20), collaborative filtering earns
-    # up to 60% of the final score — the more social proof we have, the more
-    # we trust it over content similarity alone.
+    # hybrid silently degrades to pure content-based scoring. 
     collab_weight = min(0.6, n_similar_users / 20)
     content_weight = min(0.8, 1.0 - collab_weight)
 
     final_scores = {}
     all_ids = (set(collab_scores) | set(content_scores)) - excluded_ids
+
+    # A candidate matching one or more of the
+    # user's onboarding genre picks (preferred_genres) gets a small
+    # multiplicative nudge, so that field actually influences ranking
+    # instead of sitting unused.
+    genre_overlap_by_id = {}
+    if preferred_genres:
+        preferred_genres_set = set(preferred_genres)
+        genre_docs = collection.find(
+            {"tmdb_id": {"$in": list(all_ids)}},
+            {"tmdb_id": 1, "genres": 1, "_id": 0},
+        )
+        for doc in genre_docs:
+            overlap = len(preferred_genres_set & set(doc.get("genres", []) or []))
+            if overlap:
+                genre_overlap_by_id[doc["tmdb_id"]] = overlap
 
     for item_id in all_ids:
         collab = collab_scores.get(item_id, 0)
@@ -235,13 +244,14 @@ def _collaborative_recommendation(
         popularity = global_counts.get(item_id, 0)
         pop_penalty_weight = 0.2
 
-        # Popularity penalty: divides the blended score down for items that
-        # are already globally popular. Without this, universally-liked
-        # blockbusters would dominate every user's recommendations simply by
-        # showing up in most neighbors' histories, drowning out personal
-        # taste signal. log1p keeps the penalty gentle and avoids a harsh
-        # drop-off for moderately popular titles.
-        score = (collab * collab_weight + content * content_weight) / (1 + pop_penalty_weight * math.log1p(popularity))
+        genre_bonus = 1 + (0.05 * genre_overlap_by_id.get(item_id, 0))
+
+        # Popularity penalty divides the blended score down
+        # for items that are already globally popular. Without this,
+        # universally-liked blockbusters would dominate every user's
+        # recommendations simply by showing up in most neighbors' histories,
+        # drowning out personal taste signal.
+        score = (collab * collab_weight + content * content_weight) / (1 + pop_penalty_weight * math.log1p(popularity)) * genre_bonus
         final_scores[item_id] = score
 
     # Safety net: if scoring produced nothing (e.g. no overlapping neighbors
@@ -250,11 +260,11 @@ def _collaborative_recommendation(
     if not final_scores:
         return list(collection.find({"tmdb_id": {"$nin": list(excluded_ids)}}, {"_id": 0}).sort("popularity", -1).limit(limit))
 
-    ranked_ids = sorted(final_scores, key=lambda k: final_scores.get(k, 0), reverse=True)[:limit]
+    ranked_ids = sorted(final_scores, key=lambda k: final_scores[k], reverse=True)[:limit]
     items = list(collection.find({"tmdb_id": {"$in": ranked_ids}}, {"_id": 0}))
     # MongoDB's $in does NOT guarantee results come back in the order the ids
     # were listed, so the ranking computed above has to be reapplied manually
-    # after the fetch — order_map maps each id to its rank position, and the
+    # after the fetch; order_map maps each id to its rank position, and the
     # final sort restores it.
     order_map = {id_: i for i, id_ in enumerate(ranked_ids)}
     items.sort(key=lambda x: order_map.get(x["tmdb_id"], 9999))
@@ -262,18 +272,21 @@ def _collaborative_recommendation(
     return items
 
 def generate_user_movie_recommendations(user_id: Any, limit: int = 12):
-    # Broad except here is deliberate: a failure in recommendation scoring
+    # Broad except results in a failure in recommendation scoring and
     # should degrade to an empty list for this user, not take down the page
     # or propagate a 500 — recommendations are an enhancement, not a
-    # critical-path feature. traceback.print_exc() keeps the failure visible
-    # in logs for debugging without surfacing it to the client.
+    # critical-path feature.
     try:
         user_oid = ObjectId(user_id) if not isinstance(user_id, ObjectId) else user_id
         user = users_collection.find_one({"_id": user_oid})
         if not user: return []
         movie_ids = _extract_ids(user.get("my_list", []), "movie")
         excluded_ids = _get_excluded_ids(user, user_oid, "movie")
-        return _collaborative_recommendation(user_oid, movie_ids, excluded_ids, "movie", movies_collection, movie_tfidf, limit)
+        preferred_genres = user.get("preferred_genres", [])
+        return _collaborative_recommendation(
+            user_oid, movie_ids, excluded_ids, "movie", movies_collection, movie_tfidf, limit,
+            preferred_genres=preferred_genres,
+        )
     except Exception:
         traceback.print_exc()
         return []
@@ -285,7 +298,11 @@ def generate_user_tv_recommendations(user_id: Any, limit: int = 12):
         if not user: return []
         tv_ids = _extract_ids(user.get("my_list", []), "tv")
         excluded_ids = _get_excluded_ids(user, user_oid, "tv")
-        return _collaborative_recommendation(user_oid, tv_ids, excluded_ids, "tv", tv_collection, tv_tfidf, limit)
+        preferred_genres = user.get("preferred_genres", [])
+        return _collaborative_recommendation(
+            user_oid, tv_ids, excluded_ids, "tv", tv_collection, tv_tfidf, limit,
+            preferred_genres=preferred_genres,
+        )
     except Exception:
         traceback.print_exc()
         return []

@@ -250,7 +250,7 @@ export default function OnboardingPage() {
             <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${color}`} />
             <span>
               <span className="text-white font-medium">{label}</span>
-              {" — "}
+              {" - "}
               {desc}
               {myList && (
                 <span className="ml-1.5 text-xs text-gray-500">
