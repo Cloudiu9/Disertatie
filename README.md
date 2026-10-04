@@ -1,4 +1,4 @@
-# MovieFlix — Platformă web inteligentă pentru recomandarea personalizată a filmelor
+# MovieFlix - Platformă web inteligentă pentru recomandarea personalizată a filmelor
 
 ![Stack](https://img.shields.io/badge/Stack-React%20%7C%20Flask%20%7C%20MongoDB-blue?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-yellow?style=flat-square&logo=python)
@@ -155,7 +155,7 @@ npm install
 Creează `frontend/.env.local`:
 
 ```env
-VITE_API_BASE=http://localhost:8000
+VITE_API_BASE=http://localhost:5000
 ```
 
 ### 4.4 Populare bază de date
@@ -185,7 +185,7 @@ Generează fișierele `movie_tfidf.pkl` și `tv_tfidf.pkl` folosite la runtime.
 ```bash
 # Terminal 1 — Backend
 cd backend
-flask run --port 8000
+flask run
 
 # Terminal 2 — Frontend
 cd frontend
@@ -271,7 +271,6 @@ Accesează aplicația la [http://localhost:5173](http://localhost:5173).
 | Frontend     | React 18, TypeScript, Tailwind CSS, Vite, React Router     |
 | Backend      | Flask, PyMongo, scikit-learn, python-dotenv, PyJWT, bcrypt |
 | Baza de date | MongoDB Atlas                                              |
-| AI / ML      | Groq API, LLaMA 3.1 8B Instant, TF-IDF (scikit-learn)      |
+| AI / ML      | Groq API, gpt-oss-20b, TF-IDF (scikit-learn)               |
 | Deployment   | Vercel (frontend), Render (backend)                        |
-| CI/CD        | GitHub Actions                                             |
 | Date externe | TMDB API                                                   |
