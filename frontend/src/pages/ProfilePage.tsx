@@ -127,18 +127,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
-
-              {/* Actions Section */}
-              <div>
-                <button
-                  onClick={() => {
-                    /* Add logout handler */
-                  }}
-                  className="bg-transparent border border-gray-700 text-white px-6 py-2 rounded hover:bg-gray-800 transition"
-                >
-                  Sign Out
-                </button>
-              </div>
             </div>
           </div>
         </div>
