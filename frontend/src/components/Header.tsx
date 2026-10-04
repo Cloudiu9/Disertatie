@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import debounce from "lodash.debounce";
 import type { Movie } from "../types/Movie";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 type SearchItem = Movie & {
   media_type?: "movie" | "tv";

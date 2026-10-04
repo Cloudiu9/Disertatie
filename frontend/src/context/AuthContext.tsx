@@ -1,42 +1,33 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as authApi from "../api/auth";
 import toast from "react-hot-toast";
+import { AuthContext, type MyListItem, type User } from "./auth-context";
 
-type User = {
-  _id: string;
-  email: string;
-  onboarding_complete?: boolean;
-  preferred_genres?: string[];
-  created_at?: string;
-  last_login?: string | null;
-};
-
-type MyListItem = {
+type RawMyListItem = {
   tmdb_id: number;
   media_type: "movie" | "tv";
 };
 
-type AuthContextType = {
-  user: User | null;
-  loading: boolean;
-  myList: MyListItem[];
-  refreshMyList: () => Promise<void>;
-  addLocal: (item: MyListItem) => void;
-  removeLocal: (item: MyListItem) => void;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  refreshMe: () => Promise<void>;
-  logout: () => Promise<void>;
-};
-
-const AuthContext = createContext<AuthContextType | null>(null);
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "response" in err &&
+    typeof (err as { response?: { data?: { error?: string } } }).response?.data
+      ?.error === "string"
+  ) {
+    return (err as { response: { data: { error: string } } }).response.data
+      .error;
+  }
+  return fallback;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [myList, setMyList] = useState<MyListItem[]>([]);
 
-  function addLocal(item: MyListItem) {
+  const addLocal = useCallback((item: MyListItem) => {
     setMyList((prev) => {
       if (
         prev.some(
@@ -45,27 +36,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ) {
         return prev;
       }
-
       return [...prev, item];
     });
-  }
+  }, []);
 
-  function removeLocal(item: MyListItem) {
+  const removeLocal = useCallback((item: MyListItem) => {
     setMyList((prev) =>
       prev.filter(
         (m) =>
           !(m.tmdb_id === item.tmdb_id && m.media_type === item.media_type),
       ),
     );
-  }
+  }, []);
 
-  async function refreshMe() {
+  const refreshMe = useCallback(async () => {
     setLoading(true);
-
     const me = await authApi.getMe();
-
     setUser(me);
-
     setLoading(false);
 
     if (
@@ -75,73 +62,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ) {
       window.location.href = "/onboarding";
     }
-  }
+  }, []);
 
-  async function refreshMyList() {
+  const refreshMyList = useCallback(async () => {
     if (!user) {
       setMyList([]);
       return;
     }
 
-    const res = await fetch("/api/my-list", {
-      credentials: "include",
-    });
-
-    const data = await res.json();
+    const res = await fetch("/api/my-list", { credentials: "include" });
+    const data: RawMyListItem[] = await res.json();
 
     setMyList(
-      data.map((item: any) => ({
+      data.map((item) => ({
         tmdb_id: item.tmdb_id,
         media_type: item.media_type,
       })),
     );
-  }
+  }, [user]);
 
-  async function login(email: string, password: string) {
-    try {
-      await authApi.login(email, password);
-      await refreshMe();
-      await refreshMyList();
-      toast.success("Logged in successfully");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Login failed");
-      throw err;
-    }
-  }
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        await authApi.login(email, password);
+        await refreshMe();
+        await refreshMyList();
+        toast.success("Logged in successfully");
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, "Login failed"));
+        throw err;
+      }
+    },
+    [refreshMe, refreshMyList],
+  );
 
-  async function register(email: string, password: string) {
-    try {
-      await authApi.register(email, password);
-      await login(email, password);
-      toast.success("Account created successfully");
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Registration failed");
-      throw err;
-    }
-  }
+  const register = useCallback(
+    async (email: string, password: string) => {
+      try {
+        await authApi.register(email, password);
+        await login(email, password);
+        toast.success("Account created successfully");
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, "Registration failed"));
+        throw err;
+      }
+    },
+    [login],
+  );
 
-  async function logout() {
+  const logout = useCallback(async () => {
     await authApi.logout();
     setUser(null);
     setMyList([]);
     toast.success("Logged out");
-  }
-
-  useEffect(() => {
-    async function init() {
-      await refreshMe();
-    }
-
-    init();
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    refreshMe();
+  }, [refreshMe]);
+
+  useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       refreshMyList();
     } else {
       setMyList([]);
     }
-  }, [user]);
+  }, [user, refreshMyList]);
 
   return (
     <AuthContext.Provider
@@ -161,10 +149,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-  return ctx;
 }
