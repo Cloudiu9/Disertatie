@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import { fetchMyList } from "../api/myList";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
 type Movie = {
   tmdb_id: number;
@@ -54,7 +54,7 @@ export default function ProfilePage() {
             {/* Left Column - Avatar & Name */}
             <div className="md:col-span-1">
               <div className="flex flex-col items-center md:items-start">
-                <div className="w-32 h-32 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-32 h-32 bg-linear-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center mb-4">
                   <span className="text-5xl font-bold">
                     {user.email[0].toUpperCase()}
                   </span>

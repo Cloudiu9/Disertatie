@@ -6,7 +6,7 @@ import { fetchMyList, removeFromMyList } from "../api/myList";
 import { toast } from "react-hot-toast";
 import MovieCard from "../components/MovieCard";
 import { SkeletonGrid } from "../components/Skeletons";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 type Item = (Movie | TVShow) & {
   media_type: "movie" | "tv";

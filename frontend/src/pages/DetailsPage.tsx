@@ -8,13 +8,12 @@ import TrailerModal from "../components/TrailerModal";
 import { fetchTrailer } from "../api/trailer";
 import { addToMyList, fetchMyList, removeFromMyList } from "../api/myList";
 
-import { useAuth } from "../context/AuthContext";
-
 import type { Movie } from "../types/Movie";
 import type { TVShow } from "../types/TVShow";
 import { SkeletonDetails } from "../components/Skeletons";
 
 import { toast } from "react-hot-toast";
+import { useAuth } from "../context/useAuth";
 
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
@@ -322,7 +321,7 @@ function DetailsPage({ mediaType }: Props) {
 
               {/* OVERVIEW */}
               {item.overview && (
-                <p className="text-gray-300 max-w-3xl text-sm sm:text-base text-center lg:text-left leading-relaxed drop-shadow-xs">
+                <p className="text-gray-300 max-w-3xl text-sm sm:text-base text-center mx-auto lg:mx-0 lg:text-left leading-relaxed drop-shadow-xs">
                   {item.overview}
                 </p>
               )}
